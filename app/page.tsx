@@ -1,26 +1,32 @@
+import { HeroSection } from "@/sections/hero-section";
 import { AboutSection } from "@/sections/about-section";
 import { AchievementsSection } from "@/sections/achievements-section";
-import { ContactSection } from "@/sections/contact-section";
-import { Footer } from "@/sections/footer";
-import { GitHubSection } from "@/sections/github-section";
-import { HeroSection } from "@/sections/hero-section";
-import { LeetCodeSection } from "@/sections/leetcode-section";
 import { ProjectsSection } from "@/sections/projects-section";
 import { TechStackSection } from "@/sections/tech-stack-section";
-import { config } from "@/lib/config";
+import { LeetCodeSection } from "@/sections/leetcode-section";
+import { GitHubSection } from "@/sections/github-section";
+import { ContactSection } from "@/sections/contact-section";
 
 export default function Home() {
   return (
-    <main>
+    <main className="bg-[#F4F4F2] min-h-screen">
+      {/* 01 */}
       <HeroSection />
+      {/* 02 */}
       <AboutSection />
-      {config.features.achievements ? <AchievementsSection /> : null}
-      {config.features.leetcode ? <LeetCodeSection /> : null}
-      {config.features.github ? <GitHubSection /> : null}
-      {config.features.projects ? <ProjectsSection /> : null}
+      {/* 03 */}
+      <AchievementsSection />
+      {/* 04 */}
+      <LeetCodeSection />
+      {/* 05 */}
+      <GitHubSection />
+      {/* 06 */}
+      <ProjectsSection />
+      {/* 07 */}
       <TechStackSection />
-      {config.features.contactForm ? <ContactSection /> : null}
-      <Footer />
+      {/* 08 */}
+      <ContactSection />
     </main>
   );
 }
+

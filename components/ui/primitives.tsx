@@ -67,8 +67,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius)] border border-border bg-card p-6 sm:p-8 shadow-sm",
-        hoverable && "transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-accent/40",
+        "rounded-2xl border border-[#E8E8E5] bg-[#FAFAF8] p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.015)]",
+        hoverable && "transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-[#1A1A1A]/20",
         className
       )}
     >
@@ -90,12 +90,12 @@ export function IconCard({
 }) {
   return (
     <Card className={cn("flex flex-col items-start gap-4", className)}>
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5F5F2] text-[#1A1A1A]">
         <Icon size={24} />
       </div>
       <div>
-        <h3 className="text-xl font-bold text-foreground">{title}</h3>
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+        <h3 className="text-xl font-bold text-[#1A1A1A]">{title}</h3>
+        {subtitle && <p className="mt-1 text-sm text-[#666666]">{subtitle}</p>}
       </div>
     </Card>
   );
@@ -111,9 +111,9 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("flex flex-col items-center text-center p-6 sm:p-8", className)}>
-      <span className="text-3xl font-extrabold text-accent sm:text-4xl">{title}</span>
-      <span className="mt-2 text-sm font-semibold text-muted-foreground sm:text-base">{subtitle}</span>
+    <Card className={cn("flex flex-col items-start text-left p-6 sm:p-8", className)}>
+      <span className="text-3xl sm:text-4xl font-serif font-semibold text-[#1A1A1A]">{title}</span>
+      <span className="mt-2 text-sm font-semibold text-[#1A1A1A]">{subtitle}</span>
     </Card>
   );
 }
@@ -134,18 +134,18 @@ export function Button({
   [key: string]: unknown;
 }) {
   const baseStyles =
-    "inline-flex items-center justify-center gap-2.5 rounded-xl font-semibold transition-all duration-200 focus-ring disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-200 focus-ring disabled:opacity-50 disabled:pointer-events-none";
 
   const variants = {
-    primary: "bg-accent text-white hover:bg-accent/90 shadow-sm hover:-translate-y-0.5 hover:shadow-md",
-    outline: "border border-border bg-card text-foreground hover:bg-muted hover:-translate-y-0.5 hover:border-accent/40",
-    ghost: "text-foreground hover:bg-muted hover:text-accent",
+    primary: "bg-[#1A1A1A] text-[#FAFAF8] hover:bg-[#333333] shadow-xs hover:-translate-y-0.5",
+    outline: "border border-[#E8E8E5] bg-[#FAFAF8] text-[#1A1A1A] hover:bg-[#F5F5F2] hover:-translate-y-0.5",
+    ghost: "text-[#1A1A1A] hover:bg-[#F5F5F2]",
   };
 
   const sizes = {
-    sm: "px-4 py-2 text-sm min-h-[40px]",
-    md: "px-6 py-3 text-base min-h-[48px]",
-    lg: "px-8 py-3.5 text-base sm:text-lg min-h-[52px]",
+    sm: "px-4 py-2 text-xs min-h-[36px]",
+    md: "px-5 py-2.5 text-sm min-h-[42px]",
+    lg: "px-6 py-3 text-sm min-h-[46px]",
   };
 
   return (

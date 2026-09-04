@@ -1,28 +1,15 @@
-import { Github, Linkedin, Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, Linkedin, Github, FileText } from "lucide-react";
 import { config } from "@/lib/config";
 import { SectionShell } from "@/components/ui/section-shell";
-import { Card } from "@/components/ui/primitives";
 import { ContactForm } from "@/components/forms/contact-form";
 
 export function ContactSection() {
-  const contactInfo = [
+  const contactLinks = [
     {
       label: "Email",
       value: config.contact.email,
       icon: Mail,
       href: `mailto:${config.contact.email}`,
-    },
-    {
-      label: "Phone",
-      value: config.contact.phone,
-      icon: Phone,
-      href: `tel:${config.contact.phone}`,
-    },
-    {
-      label: "Location",
-      value: config.contact.location,
-      icon: MapPin,
-      href: "",
     },
     {
       label: "LinkedIn",
@@ -36,75 +23,54 @@ export function ContactSection() {
       icon: Github,
       href: config.socials.github.url,
     },
+    {
+      label: "Resume",
+      value: "Download my resume",
+      icon: FileText,
+      href: config.personal.resume,
+    },
   ];
 
   return (
     <SectionShell
       id="contact"
       index="08"
-      label="CONTACT ME"
-      title={
-        <>
-          Let&apos;s Build <span className="text-accent">Something Great.</span>
-        </>
-      }
-      description={config.contact.availability}
+      label="GET IN TOUCH"
+      title="Let's Build Something."
+      description="Open to opportunities, collaborations and interesting conversations."
+      quote="Good Ideas Better People."
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-        {/* Left Column: Contact Details */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <Card className="flex flex-col gap-6 p-6 sm:p-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                <Send size={20} />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">Get In Touch</h3>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              {contactInfo.map((item) => {
-                const Icon = item.icon;
-                const Content = (
-                  <div className="flex items-center gap-4 p-3.5 rounded-xl bg-muted/40 border border-border/50 hover:border-accent/30 transition-colors">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-card text-accent shrink-0">
-                      <Icon size={20} />
-                    </div>
-                    <div className="overflow-hidden">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                        {item.label}
-                      </span>
-                      <span className="text-sm font-bold text-foreground truncate block mt-0.5">
-                        {item.value}
-                      </span>
-                    </div>
-                  </div>
-                );
-
-                return item.href ? (
-                  <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">
-                    {Content}
-                  </a>
-                ) : (
-                  <div key={item.label}>{Content}</div>
-                );
-              })}
-            </div>
-          </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Left Column: Contact Methods List */}
+        <div className="lg:col-span-5 flex flex-col gap-3.5">
+          {contactLinks.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] hover:-translate-y-0.5 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7F7F5] text-[#1A1A1A] shrink-0">
+                  <Icon size={18} />
+                </div>
+                <div className="overflow-hidden">
+                  <span className="text-xs font-semibold text-[#1A1A1A] block">{item.label}</span>
+                  <span className="text-xs text-[#666666] truncate block mt-0.5">{item.value}</span>
+                </div>
+              </a>
+            );
+          })}
         </div>
 
         {/* Right Column: Contact Form */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <Card className="p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                <Mail size={20} />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">Send a Message</h3>
-            </div>
-            <ContactForm />
-          </Card>
+        <div className="lg:col-span-7">
+          <ContactForm />
         </div>
       </div>
     </SectionShell>
   );
 }
+

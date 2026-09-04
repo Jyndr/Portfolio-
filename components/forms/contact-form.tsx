@@ -52,17 +52,14 @@ export function ContactForm() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-sm font-semibold text-foreground">
-            Name
-          </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="flex flex-col gap-1">
           <input
             id="name"
             {...form.register("name")}
             placeholder="Your Name"
             autoComplete="name"
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-xl border border-[#E6E6E6] bg-[#FFFFFF] px-4 py-3 text-xs text-[#1A1A1A] placeholder:text-[#999999] transition-colors focus:border-[#1A1A1A] focus:outline-none"
           />
           {form.formState.errors.name?.message && (
             <span className="text-xs font-medium text-rose-500">
@@ -71,17 +68,14 @@ export function ContactForm() {
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-sm font-semibold text-foreground">
-            Email
-          </label>
+        <div className="flex flex-col gap-1">
           <input
             id="email"
             type="email"
             {...form.register("email")}
-            placeholder="your.email@example.com"
+            placeholder="Your Email"
             autoComplete="email"
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-xl border border-[#E6E6E6] bg-[#FFFFFF] px-4 py-3 text-xs text-[#1A1A1A] placeholder:text-[#999999] transition-colors focus:border-[#1A1A1A] focus:outline-none"
           />
           {form.formState.errors.email?.message && (
             <span className="text-xs font-medium text-rose-500">
@@ -91,15 +85,12 @@ export function ContactForm() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="subject" className="text-sm font-semibold text-foreground">
-          Subject
-        </label>
+      <div className="flex flex-col gap-1">
         <input
           id="subject"
           {...form.register("subject")}
-          placeholder="Project Inquiry / Opportunity"
-          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          placeholder="Subject"
+          className="w-full rounded-xl border border-[#E6E6E6] bg-[#FFFFFF] px-4 py-3 text-xs text-[#1A1A1A] placeholder:text-[#999999] transition-colors focus:border-[#1A1A1A] focus:outline-none"
         />
         {form.formState.errors.subject?.message && (
           <span className="text-xs font-medium text-rose-500">
@@ -108,16 +99,13 @@ export function ContactForm() {
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="message" className="text-sm font-semibold text-foreground">
-          Message
-        </label>
+      <div className="flex flex-col gap-1">
         <textarea
           id="message"
-          rows={5}
+          rows={4}
           {...form.register("message")}
-          placeholder="Tell me about your project or inquiry..."
-          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 resize-y"
+          placeholder="Your Message"
+          className="w-full rounded-xl border border-[#E6E6E6] bg-[#FFFFFF] px-4 py-3 text-xs text-[#1A1A1A] placeholder:text-[#999999] transition-colors focus:border-[#1A1A1A] focus:outline-none resize-none"
         />
         {form.formState.errors.message?.message && (
           <span className="text-xs font-medium text-rose-500">
@@ -131,17 +119,17 @@ export function ContactForm() {
         variant="primary"
         size="lg"
         disabled={form.formState.isSubmitting}
-        className="mt-2 w-full sm:w-auto self-start"
+        className="w-full sm:w-auto self-start"
       >
         {form.formState.isSubmitting ? (
           <>
-            <Loader2 size={18} className="animate-spin" />
+            <Loader2 size={15} className="animate-spin" />
             <span>Sending...</span>
           </>
         ) : (
           <>
-            <Send size={18} />
             <span>Send Message</span>
+            <Send size={15} />
           </>
         )}
       </Button>

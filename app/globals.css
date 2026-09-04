@@ -1,18 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #080f1d;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --card: #ffffff;
-  --accent: #5b5cf6;
-  --accent-soft: #eeedff;
-  --radius: 18px;
-  --shadow-soft: 0 18px 60px rgba(15, 23, 42, 0.06);
+  --background: #F8F8F5;
+  --foreground: #1A1A1A;
+  --muted: #F5F5F2;
+  --muted-foreground: #666666;
+  --border: #E8E8E5;
+  --card: #FAFAF8;
+  --accent: #1A1A1A;
+  --accent-soft: #F0F0ED;
+  --radius: 16px;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.02);
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-handwriting: 'Caveat', cursive;
 }
 
 * {
@@ -24,12 +29,23 @@ html {
 }
 
 body {
-  margin: 0;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif-title {
+  font-family: var(--font-serif);
+}
+
+.font-handwriting {
+  font-family: var(--font-handwriting);
+}
+
+.page-section {
+  min-height: 100vh;
 }
 
 .focus-ring:focus-visible,
@@ -37,6 +53,6 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--foreground);
   outline-offset: 3px;
 }

@@ -14,6 +14,11 @@ const config: Config = {
         accent: "var(--accent)",
         "accent-soft": "var(--accent-soft)",
       },
+      fontFamily: {
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
+        handwriting: ["var(--font-handwriting)", "cursive"],
+      },
       borderRadius: {
         app: "var(--radius)",
       },
@@ -26,3 +31,4 @@ const config: Config = {
 };
 
 export default config;
+

@@ -9,16 +9,19 @@ type HeatmapDay = {
 };
 
 type HeatmapProps = {
-  days: HeatmapDay[];
+  days?: HeatmapDay[];
+  data?: HeatmapDay[];
   title?: string;
 };
 
-export function InteractiveHeatmap({ days }: HeatmapProps) {
+export function InteractiveHeatmap({ days, data }: HeatmapProps) {
   const [hoveredDay, setHoveredDay] = useState<HeatmapDay | null>(null);
+  const items = days || data || [];
 
-  if (!days || days.length === 0) {
+
+  if (!items || items.length === 0) {
     return (
-      <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted/20 border border-dashed border-border rounded-xl">
+      <div className="p-8 text-center text-sm font-medium text-[#6e6a61] bg-[#EFEBE0] border border-dashed border-[#E0DACA] rounded-xl">
         Contribution heatmap data currently unavailable.
       </div>
     );
@@ -26,20 +29,20 @@ export function InteractiveHeatmap({ days }: HeatmapProps) {
 
   // Level color map
   const levelColors = [
-    "bg-muted border-transparent",
-    "bg-accent/30 border-accent/20",
-    "bg-accent/60 border-accent/40",
-    "bg-accent/85 border-accent/60",
-    "bg-accent border-accent",
+    "bg-[#EBE6D8] border-transparent",
+    "bg-[#d4cebd] border-[#c0b9a6]",
+    "bg-[#9e9683] border-[#8a8270]",
+    "bg-[#575347] border-[#423f36]",
+    "bg-[#1c1b18] border-[#1c1b18]",
   ];
 
   return (
     <div className="flex flex-col gap-3 relative">
       {/* Tooltip Header */}
-      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground min-h-[20px]">
+      <div className="flex items-center justify-between text-xs font-semibold text-[#6e6a61] min-h-[20px]">
         <span>Recent Activity Grid</span>
         {hoveredDay ? (
-          <span className="text-accent font-bold">
+          <span className="text-[#1c1b18] font-bold">
             {hoveredDay.count} contribution{hoveredDay.count === 1 ? "" : "s"} on {hoveredDay.date}
           </span>
         ) : (
@@ -53,7 +56,7 @@ export function InteractiveHeatmap({ days }: HeatmapProps) {
           className="grid grid-flow-col grid-rows-7 gap-1.5 w-max min-w-full"
           aria-label="Activity Heatmap"
         >
-          {days.map((day, idx) => (
+          {items.map((day, idx) => (
             <div
               key={idx}
               onMouseEnter={() => setHoveredDay(day)}

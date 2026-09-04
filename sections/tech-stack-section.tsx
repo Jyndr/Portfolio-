@@ -1,69 +1,56 @@
-import {
-  Brain,
-  Code2,
-  Cpu,
-  Database,
-  Globe,
-  Layers,
-  Server,
-  Terminal,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
 import { config } from "@/lib/config";
-import { titleCase } from "@/lib/utils";
 import { SectionShell } from "@/components/ui/section-shell";
-import { Card, Pill, Grid } from "@/components/ui/primitives";
 import { FadeIn } from "@/components/common/motion";
 
-const categoryIcons: Record<string, LucideIcon> = {
-  languages: Code2,
-  frontend: Globe,
-  backend: Server,
-  databases: Database,
-  cloud: Layers,
-  devops: Wrench,
-  systems: Cpu,
-  ai: Brain,
-  fundamentals: Terminal,
-};
-
 export function TechStackSection() {
+  const stackCategories = [
+    {
+      title: "Languages",
+      skills: config.skills.languages || ["C++", "JavaScript", "TypeScript", "Python"],
+    },
+    {
+      title: "Frontend",
+      skills: config.skills.frontend || ["React", "Next.js", "Tailwind CSS", "HTML / CSS"],
+    },
+    {
+      title: "Backend",
+      skills: config.skills.backend || ["Node.js", "Express.js", "REST APIs", "Redis"],
+    },
+    {
+      title: "Database & Tools",
+      skills: [...(config.skills.databases || []), ...(config.skills.devops || [])].slice(0, 6),
+    },
+  ];
+
   return (
     <SectionShell
       id="tech"
-      index="07"
-      label="TECH STACK"
-      title={
-        <>
-          Technologies &amp; <span className="text-accent">Tooling</span>
-        </>
-      }
-      description="The languages, frameworks, databases, systems, and cloud infrastructure I use to craft software."
+      index="05"
+      label="TOOLS & USAGE"
+      title="Tech Stack"
+      description="Technologies that power my work."
+      quote="Good tools make great builders."
     >
-      <Grid cols={3}>
-        {Object.entries(config.skills).map(([group, skills]) => {
-          const Icon = categoryIcons[group.toLowerCase()] ?? Code2;
-          return (
-            <FadeIn key={group}>
-              <Card className="flex flex-col h-full gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent shrink-0">
-                    <Icon size={20} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stackCategories.map((cat) => (
+          <FadeIn key={cat.title}>
+            <div className="flex flex-col p-5 sm:p-6 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] h-full">
+              <h3 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider mb-4 pb-2 border-b border-[#E6E6E6]">
+                {cat.title}
+              </h3>
+              <div className="flex flex-col gap-2.5">
+                {cat.skills.map((skill) => (
+                  <div key={skill} className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#1A1A1A]" />
+                    <span className="text-xs font-medium text-[#666666]">{skill}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-foreground">{titleCase(group)}</h3>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {skills.map((skill) => (
-                    <Pill key={skill}>{skill}</Pill>
-                  ))}
-                </div>
-              </Card>
-            </FadeIn>
-          );
-        })}
-      </Grid>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+        ))}
+      </div>
     </SectionShell>
   );
 }
+
