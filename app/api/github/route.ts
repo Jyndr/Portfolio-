@@ -1,113 +1,359 @@
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 
+export interface GitHubContributionDay {
+  date: string;
+  count: number;
+  level: number;
+}
+
+export interface GitHubLanguage {
+  name: string;
+  percentage: number;
+  color: string;
+}
+
+export interface GitHubPinnedRepo {
+  name: string;
+  description: string;
+  url: string;
+  stars: number;
+  language: string;
+}
+
+export interface GitHubResponseData {
+  isAvailable: boolean;
+  totalContributions?: number | null;
+  followers?: number | null;
+  following?: number | null;
+  repositories?: number | null;
+  totalStars?: number | null;
+  languages?: GitHubLanguage[];
+  pinnedRepositories?: GitHubPinnedRepo[];
+  pinnedRepos?: GitHubPinnedRepo[];
+  contributionCalendar?: GitHubContributionDay[];
+  heatmap?: GitHubContributionDay[];
+  error?: string;
+  details?: unknown;
+}
+
 export async function GET() {
-  const username = config.github.username;
+  const username = process.env.GITHUB_USERNAME || config.github.username;
+  const token = process.env.GITHUB_TOKEN;
+
   if (!username || username === "TODO") {
-    return NextResponse.json({
-      isAvailable: false,
-      error: "GitHub username is set to TODO in portfolio.config.ts.",
-    }, { status: 400 });
+    console.error("[GitHub API] Error: Username not configured.");
+    return NextResponse.json<GitHubResponseData>(
+      {
+        isAvailable: false,
+        error: "GitHub username is not configured.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const headers: Record<string, string> = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const query = `
+    query getGitHubData($username: String!) {
+      user(login: $username) {
+        followers {
+          totalCount
+        }
+        following {
+          totalCount
+        }
+        repositories(first: 100, ownerAffiliations: OWNER, isFork: false) {
+          totalCount
+          nodes {
+            name
+            stargazerCount
+            primaryLanguage {
+              name
+              color
+            }
+          }
+        }
+        pinnedItems(first: 6, types: REPOSITORY) {
+          nodes {
+            ... on Repository {
+              name
+              description
+              url
+              stargazerCount
+              primaryLanguage {
+                name
+              }
+            }
+          }
+        }
+        contributionsCollection {
+          contributionCalendar {
+            totalContributions
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+                contributionLevel
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        query,
+        variables: { username },
+      }),
+      next: { revalidate: 3600 },
+    });
+  } catch (error: unknown) {
+    const err = error as Error & { cause?: unknown };
+    console.error("GitHub fetch error:", err);
+    console.error("Cause:", err.cause);
+    console.error("Stack:", err.stack);
+    return await fetchFallbackGitHubData(username, headers, err);
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "Unable to read error text");
+    console.error(`[GitHub API] HTTP Error ${res.status}: ${errorText}`);
+    return await fetchFallbackGitHubData(username, headers, new Error(`GitHub GraphQL HTTP ${res.status}: ${errorText}`));
+  }
+
+  let json: { data?: { user?: Record<string, unknown> }; errors?: Array<{ message: string }> };
+  try {
+    json = await res.json();
+  } catch (error: unknown) {
+    const err = error as Error & { cause?: unknown };
+    console.error("GitHub JSON parse error:", err);
+    console.error("Cause:", err.cause);
+    console.error("Stack:", err.stack);
+    return await fetchFallbackGitHubData(username, headers, err);
+  }
+
+  if (json.errors && json.errors.length > 0) {
+    console.error("[GitHub API] GraphQL Errors:", json.errors);
+    return await fetchFallbackGitHubData(username, headers, new Error(json.errors.map(e => e.message).join(", ")));
+  }
+
+  const user = json.data?.user as {
+    followers?: { totalCount?: number };
+    following?: { totalCount?: number };
+    repositories?: { totalCount?: number; nodes?: Array<{ name?: string; stargazerCount?: number; primaryLanguage?: { name?: string; color?: string } }> };
+    pinnedItems?: { nodes?: Array<{ name?: string; description?: string; url?: string; stargazerCount?: number; primaryLanguage?: { name?: string } }> };
+    contributionsCollection?: {
+      contributionCalendar?: {
+        totalContributions?: number;
+        weeks?: Array<{
+          contributionDays?: Array<{
+            date: string;
+            contributionCount: number;
+            contributionLevel: string;
+          }>;
+        }>;
+      };
+    };
+  } | undefined;
+
+  if (!user) {
+    console.error("[GitHub API] User object not found in GraphQL response");
+    return await fetchFallbackGitHubData(username, headers, new Error("User object not found in response"));
+  }
+
+  const followers = user.followers?.totalCount ?? 0;
+  const following = user.following?.totalCount ?? 0;
+  const repositories = user.repositories?.totalCount ?? 0;
+
+  let totalStars = 0;
+  const languageCounts: Record<string, { count: number; color: string }> = {};
+
+  const repoNodes = user.repositories?.nodes ?? [];
+  for (const repo of repoNodes) {
+    totalStars += repo.stargazerCount ?? 0;
+    if (repo.primaryLanguage?.name) {
+      const langName = repo.primaryLanguage.name;
+      const color = repo.primaryLanguage.color ?? "#64748B";
+      if (!languageCounts[langName]) {
+        languageCounts[langName] = { count: 0, color };
+      }
+      languageCounts[langName].count += 1;
+    }
+  }
+
+  const totalLangCount = Object.values(languageCounts).reduce((acc, curr) => acc + curr.count, 0);
+  const languages: GitHubLanguage[] = Object.entries(languageCounts)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 5)
+    .map(([name, data]) => ({
+      name,
+      percentage: totalLangCount > 0 ? Math.round((data.count / totalLangCount) * 100) : 0,
+      color: data.color,
+    }));
+
+  const pinnedNodes = user.pinnedItems?.nodes ?? [];
+  let pinnedRepositories: GitHubPinnedRepo[] = pinnedNodes.map(
+    (repo) => ({
+      name: repo.name ?? "",
+      description: repo.description ?? "",
+      url: repo.url ?? `https://github.com/${username}/${repo.name ?? ""}`,
+      stars: repo.stargazerCount ?? 0,
+      language: repo.primaryLanguage?.name ?? "TypeScript",
+    })
+  );
+
+  if (pinnedRepositories.length === 0 && repoNodes.length > 0) {
+    pinnedRepositories = repoNodes.slice(0, 4).map((repo) => ({
+      name: repo.name ?? "",
+      description: "",
+      url: `https://github.com/${username}/${repo.name ?? ""}`,
+      stars: repo.stargazerCount ?? 0,
+      language: repo.primaryLanguage?.name ?? "TypeScript",
+    }));
+  }
+
+  const levelMap: Record<string, number> = {
+    NONE: 0,
+    FIRST_QUARTILE: 1,
+    SECOND_QUARTILE: 2,
+    THIRD_QUARTILE: 3,
+    FOURTH_QUARTILE: 4,
+  };
+
+  const contributionCalendar: GitHubContributionDay[] = [];
+  const weeks = user.contributionsCollection?.contributionCalendar?.weeks ?? [];
+  let calculatedContributions = 0;
+  for (const week of weeks) {
+    for (const day of week.contributionDays ?? []) {
+      const count = day.contributionCount ?? 0;
+      calculatedContributions += count;
+      const level = levelMap[day.contributionLevel] ?? (count > 8 ? 4 : count > 5 ? 3 : count > 2 ? 2 : count > 0 ? 1 : 0);
+      contributionCalendar.push({
+        date: day.date,
+        count,
+        level,
+      });
+    }
+  }
+
+  const totalContributions = user.contributionsCollection?.contributionCalendar?.totalContributions ?? calculatedContributions;
+
+  return NextResponse.json<GitHubResponseData>({
+    isAvailable: true,
+    totalContributions,
+    followers,
+    following,
+    repositories,
+    totalStars,
+    languages,
+    pinnedRepositories,
+    pinnedRepos: pinnedRepositories,
+    contributionCalendar,
+    heatmap: contributionCalendar,
+  });
+}
+
+async function fetchFallbackGitHubData(username: string, headers: Record<string, string>, primaryError: Error & { cause?: unknown }): Promise<NextResponse<GitHubResponseData>> {
+  let userRes: Response;
+  try {
+    userRes = await fetch(`https://api.github.com/users/${username}`, {
+      headers,
+      next: { revalidate: 3600 },
+    });
+  } catch (error: unknown) {
+    const err = error as Error & { cause?: unknown };
+    console.error("GitHub REST fallback fetch error:", err);
+    console.error("Cause:", err.cause);
+    console.error("Stack:", err.stack);
+
+    const causeDetail = err.cause ? (typeof err.cause === "object" ? JSON.stringify(err.cause) : String(err.cause)) : null;
+    const detailMsg = causeDetail ? `${err.message} (Cause: ${causeDetail})` : err.message;
+
+    return NextResponse.json<GitHubResponseData>(
+      {
+        isAvailable: false,
+        error: `GitHub API connection failed: ${detailMsg}`,
+        details: { primaryError: primaryError.message, fallbackError: err.message, cause: err.cause },
+      },
+      { status: 502 }
+    );
+  }
+
+  if (!userRes.ok) {
+    return NextResponse.json<GitHubResponseData>(
+      {
+        isAvailable: false,
+        error: `GitHub API REST HTTP ${userRes.status}: ${userRes.statusText}`,
+      },
+      { status: userRes.status }
+    );
   }
 
   try {
-    const userRes = await fetch(`https://api.github.com/users/${username}`, {
-      headers: { "User-Agent": "PortfolioApp" },
-      next: { revalidate: 3600 },
-    });
-
-    if (!userRes.ok) {
-      const errorText = await userRes.text();
-      return NextResponse.json({
-        isAvailable: false,
-        error: `GitHub API HTTP ${userRes.status}: ${userRes.statusText || errorText}`,
-      }, { status: userRes.status });
-    }
-
-    const [reposRes, eventsRes, contribRes] = await Promise.allSettled([
-      fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
-        headers: { "User-Agent": "PortfolioApp" },
-        next: { revalidate: 3600 },
-      }),
-      fetch(`https://api.github.com/users/${username}/events/public?per_page=10`, {
-        headers: { "User-Agent": "PortfolioApp" },
-        next: { revalidate: 900 },
-      }),
-      fetch(`https://github-contributions-api.deno.dev/${username}.json`, {
-        next: { revalidate: 3600 },
-      }),
-    ]);
-
     const userData = await userRes.json();
-    const reposData = reposRes.status === "fulfilled" && reposRes.value.ok ? await reposRes.value.json() : [];
-    const eventsData = eventsRes.status === "fulfilled" && eventsRes.value.ok ? await eventsRes.value.json() : [];
-    const contribData = contribRes.status === "fulfilled" && contribRes.value.ok ? await contribRes.value.json() : null;
-
-    const languageCounts: Record<string, number> = {};
-    let totalStars = 0;
-
-    for (const repo of reposData) {
-      if (repo.stargazers_count) totalStars += repo.stargazers_count;
-      if (repo.language) {
-        languageCounts[repo.language] = (languageCounts[repo.language] ?? 0) + 1;
+    let reposData: Array<{ name: string; description: string; html_url: string; stargazers_count: number; language: string }> = [];
+    try {
+      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
+        headers,
+        next: { revalidate: 3600 },
+      });
+      if (reposRes.ok) {
+        reposData = await reposRes.json();
       }
+    } catch (reposErr) {
+      console.error("GitHub REST repos fetch error:", reposErr);
     }
 
-    const totalLangRepos = Object.values(languageCounts).reduce((a, b) => a + b, 0);
-    const languages = Object.entries(languageCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, count], idx) => ({
-        name,
-        percentage: totalLangRepos > 0 ? Math.round((count / totalLangRepos) * 100) : 0,
-        color: ["#5B5CF6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"][idx] ?? "#64748B",
-      }));
+    let totalStars = 0;
+    for (const r of reposData) {
+      if (r.stargazers_count) totalStars += r.stargazers_count;
+    }
 
-    const pinnedRepos = reposData.slice(0, 4).map((repo: { name: string; description: string; html_url: string; stargazers_count: number; language: string }) => ({
+    const pinnedRepositories: GitHubPinnedRepo[] = reposData.slice(0, 4).map((repo) => ({
       name: repo.name,
-      description: repo.description,
+      description: repo.description ?? "",
       url: repo.html_url,
       stars: repo.stargazers_count ?? 0,
-      language: repo.language,
+      language: repo.language ?? "TypeScript",
     }));
 
-    const recentActivity = eventsData.slice(0, 5).map((event: { type: string; repo?: { name: string }; created_at: string }) => ({
-      title: event.type.replace("Event", ""),
-      subtitle: event.repo?.name ?? username,
-      time: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(event.created_at)),
-    }));
-
-    let heatmap: Array<{ date: string; count: number; level: number }> = [];
-    if (contribData && Array.isArray(contribData.contributions)) {
-      heatmap = contribData.contributions.map((day: { date?: string; count?: number; intensity?: number }) => {
-        const count = day.count ?? day.intensity ?? 0;
-        const level = typeof day.intensity === "number" ? day.intensity : count > 10 ? 4 : count > 5 ? 3 : count > 2 ? 2 : count > 0 ? 1 : 0;
-        return {
-          date: day.date ?? "Contribution day",
-          count,
-          level,
-        };
-      });
-    }
-
-    return NextResponse.json({
+    return NextResponse.json<GitHubResponseData>({
       isAvailable: true,
-      profile: userData?.html_url ?? `https://github.com/${username}`,
-      repositories: userData?.public_repos ?? reposData.length,
-      followers: userData?.followers ?? 0,
-      following: userData?.following ?? 0,
-      stars: totalStars,
-      totalContributions: contribData?.totalContributions ?? null,
-      languages,
-      pinnedRepos,
-      recentActivity,
-      heatmap,
+      totalContributions: null,
+      followers: userData.followers ?? null,
+      following: userData.following ?? null,
+      repositories: userData.public_repos ?? reposData.length,
+      totalStars,
+      languages: [],
+      pinnedRepositories,
+      pinnedRepos: pinnedRepositories,
+      contributionCalendar: [],
+      heatmap: [],
     });
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({
-      isAvailable: false,
-      error: `GitHub API network request failed: ${errorMsg}`,
-    }, { status: 500 });
+  } catch (parseErr: unknown) {
+    const err = parseErr as Error;
+    console.error("GitHub REST JSON parse error:", err);
+    return NextResponse.json<GitHubResponseData>(
+      {
+        isAvailable: false,
+        error: `GitHub REST data parsing failed: ${err.message}`,
+      },
+      { status: 500 }
+    );
   }
 }

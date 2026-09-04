@@ -1,7 +1,7 @@
-// Responsive Oneko Cat Cursor with touch support, curious/tamed state mechanics, crisp pixel art & white eyes
+// Responsive Oneko Cat Cursor with touch support, curious/tamed state mechanics, crisp pixel art, white eyes & contact form obstacle avoidance
 
 export function initOneko() {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") return () => { };
 
   const nekoEl = document.createElement("div");
   nekoEl.id = "oneko";
@@ -106,6 +106,37 @@ export function initOneko() {
   window.addEventListener("touchmove", onTouchMove, { passive: true });
   window.addEventListener("touchstart", onTouchMove, { passive: true });
 
+  // Collision detection helper to keep the cat outside the contact form container
+  function applyContactFormObstacle(px: number, py: number): { x: number; y: number } {
+    const formEl = document.getElementById("contact-form");
+    if (!formEl) return { x: px, y: py };
+
+    const rect = formEl.getBoundingClientRect();
+    const margin = 30; // Safety buffer distance around form
+
+    const minX = rect.left - margin;
+    const maxX = rect.right + margin;
+    const minY = rect.top - margin;
+    const maxY = rect.bottom + margin;
+
+    // Check if point is inside restricted form bounding box
+    if (px >= minX && px <= maxX && py >= minY && py <= maxY) {
+      const distLeft = Math.abs(px - minX);
+      const distRight = Math.abs(maxX - px);
+      const distTop = Math.abs(py - minY);
+      const distBottom = Math.abs(maxY - py);
+
+      const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+      if (minDist === distLeft) return { x: minX, y: py };
+      if (minDist === distRight) return { x: maxX, y: py };
+      if (minDist === distTop) return { x: px, y: minY };
+      return { x: px, y: maxY };
+    }
+
+    return { x: px, y: py };
+  }
+
   function tick(timestamp: number) {
     animationFrameId = requestAnimationFrame(tick);
 
@@ -130,7 +161,6 @@ export function initOneko() {
     }
 
     if (catMode === "curious") {
-      // Approach pointer slowly and stay nearby (~65px)
       if (distToPointer > 65) {
         targetX = pointerX;
         targetY = pointerY;
@@ -171,6 +201,11 @@ export function initOneko() {
       }
     }
 
+    // Apply contact form obstacle avoidance to target coordinates
+    const safeTarget = applyContactFormObstacle(targetX, targetY);
+    targetX = safeTarget.x;
+    targetY = safeTarget.y;
+
     const dx = targetX - nekoPosX;
     const dy = targetY - nekoPosY;
     const distance = Math.hypot(dx, dy);
@@ -183,6 +218,11 @@ export function initOneko() {
 
       nekoPosX += velX;
       nekoPosY += velY;
+
+      // Ensure cat position itself never enters contact form restricted area
+      const safePos = applyContactFormObstacle(nekoPosX, nekoPosY);
+      nekoPosX = safePos.x;
+      nekoPosY = safePos.y;
 
       // Bound to viewport boundaries on mobile and desktop
       nekoPosX = Math.min(Math.max(19, nekoPosX), window.innerWidth - 19);
