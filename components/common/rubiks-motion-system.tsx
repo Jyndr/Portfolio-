@@ -48,10 +48,10 @@ function createCubieConfigs(): CubieConfig[] {
         const ny = x === 0 && y === 0 && z === 0 ? 0.6 : y / len;
         const nz = x === 0 && y === 0 && z === 0 ? 0.8 : z / len;
 
-        // Deterministic pseudo-random scatter trajectory
-        const scatterX = Math.sin(id * 3.7 + 1.2) * 180;
-        const scatterY = Math.cos(id * 2.3 + 0.8) * 160;
-        const scatterZ = Math.sin(id * 5.1 + 2.1) * 150;
+        // Deterministic pseudo-random scatter trajectory (compact cluster)
+        const scatterX = Math.sin(id * 3.7 + 1.2) * 75;
+        const scatterY = Math.cos(id * 2.3 + 0.8) * 80;
+        const scatterZ = Math.sin(id * 5.1 + 2.1) * 75;
 
         // Individual tumbling rates
         const spinX = (0.7 + (id % 4) * 0.3) * (id % 2 === 0 ? 1 : -1);
@@ -190,63 +190,33 @@ export function RubiksMotionSystem() {
         heroY = winH * 0.55;
       }
 
-      // Waypoint trajectory through sections ("giving pages one by one"):
-      // 0: Hero, 1: About & Experience, 2: LeetCode & GitHub, 3: Projects, 4: Tech Stack, 5: Contact
+      // User is the Sun at viewport center: (sunX, sunY)
+      // Cubes are Earth revolving around the user in a 3D celestial orbit
+      const sunX = winW * 0.5;
+      const sunY = winH * 0.5;
+      const rx = isMobile ? winW * 0.40 : winW * 0.44;
+      const ry = isMobile ? winH * 0.38 : winH * 0.42;
+
+      // Starting angle aligned with the Hero anchor
+      const heroAngle = Math.atan2(heroY - sunY, heroX - sunX);
+
+      // Orbital revolution angle: combines scroll progress (1.5 full orbits) + continuous planetary time
+      const scrollOrbit = scrollFraction * (Math.PI * 2 * 1.5);
+      const timeOrbit = time * 0.35;
+      const currentOrbitAngle = heroAngle + (scrollOrbit + timeOrbit) * bProgress;
+
       let targetX = heroX;
       let targetY = heroY;
-      let sectionExplosionMult = 1.0;
+      let sectionExplosionMult = 0.8;
 
       if (bProgress > 0.01) {
-        // Break has started: interpolate across section waypoints based on scrollFraction
-        if (scrollFraction < 0.22) {
-          // Section 2: About & Experience (Top-Right / Right flank)
-          const t = Math.min(1, (scrollFraction - 0.05) / 0.17);
-          const p2X = isMobile ? winW * 0.75 : winW * 0.82;
-          const p2Y = winH * 0.38;
-          targetX = heroX + (p2X - heroX) * t;
-          targetY = heroY + (p2Y - heroY) * t;
-          sectionExplosionMult = 1.0;
-        } else if (scrollFraction < 0.45) {
-          // Section 3: LeetCode & GitHub (Left flank halo behind cards)
-          const t = (scrollFraction - 0.22) / 0.23;
-          const p2X = isMobile ? winW * 0.75 : winW * 0.82;
-          const p2Y = winH * 0.38;
-          const p3X = isMobile ? winW * 0.25 : winW * 0.18;
-          const p3Y = winH * 0.48;
-          targetX = p2X + (p3X - p2X) * t;
-          targetY = p2Y + (p3Y - p2Y) * t;
-          sectionExplosionMult = 1.15;
-        } else if (scrollFraction < 0.70) {
-          // Section 4: Projects & Case Studies (Expanded dual flank framing project cards)
-          const t = (scrollFraction - 0.45) / 0.25;
-          const p3X = isMobile ? winW * 0.25 : winW * 0.18;
-          const p3Y = winH * 0.48;
-          const p4X = winW * 0.50;
-          const p4Y = winH * 0.50;
-          targetX = p3X + (p4X - p3X) * t;
-          targetY = p3Y + (p4Y - p3Y) * t;
-          sectionExplosionMult = 1.4;
-        } else if (scrollFraction < 0.88) {
-          // Section 5: Tech Stack & Tools (Center-spread constellation)
-          const t = (scrollFraction - 0.70) / 0.18;
-          const p4X = winW * 0.50;
-          const p4Y = winH * 0.50;
-          const p5X = isMobile ? winW * 0.80 : winW * 0.84;
-          const p5Y = winH * 0.46;
-          targetX = p4X + (p5X - p4X) * t;
-          targetY = p4Y + (p5Y - p4Y) * t;
-          sectionExplosionMult = 1.25;
-        } else {
-          // Section 6: Contact & Footer (Lower-right soft orbit)
-          const t = (scrollFraction - 0.88) / 0.12;
-          const p5X = isMobile ? winW * 0.80 : winW * 0.84;
-          const p5Y = winH * 0.46;
-          const p6X = isMobile ? winW * 0.75 : winW * 0.78;
-          const p6Y = winH * 0.62;
-          targetX = p5X + (p6X - p5X) * t;
-          targetY = p5Y + (p6Y - p5Y) * t;
-          sectionExplosionMult = 0.95;
-        }
+        // Planetary orbital ellipse around the user (Sun)
+        const orbitX = sunX + Math.cos(currentOrbitAngle) * rx;
+        const orbitY = sunY + Math.sin(currentOrbitAngle) * ry;
+
+        // Smooth transition from hero anchor into orbit
+        targetX = heroX + (orbitX - heroX) * bProgress;
+        targetY = heroY + (orbitY - heroY) * bProgress;
       }
 
       // Smooth position interpolation (lerp)
@@ -260,33 +230,43 @@ export function RubiksMotionSystem() {
       }
 
       // 3D Revolution Angles of the Whole Cluster
-      // Combines user drag (when at hero) + scroll-driven rotation + continuous orbital time
+      // Like Earth tilted at an angle, revolving and rotating in 3D
       const clusterPitch = rotX.current + (Math.sin(scrollY * 0.002 + time * 0.5) * 16) * bProgress;
-      const clusterYaw = rotY.current + (scrollY * 0.18 + time * 12) * bProgress;
-      const clusterRoll = (scrollY * 0.06 + Math.cos(time * 0.4) * 8) * bProgress;
-      const bobY = Math.sin(time * 1.5) * (bProgress > 0.5 ? 12 : 6);
+      const clusterYaw = rotY.current + (scrollY * 0.20 + time * 14) * bProgress;
+      const clusterRoll = (scrollY * 0.06 + Math.cos(time * 0.4) * 10) * bProgress;
+      const bobY = Math.sin(time * 1.6) * (bProgress > 0.5 ? 10 : 6);
+
+      // Deep 3D perspective pushback so cubes are strictly in the background
+      const orbitalZ = Math.sin(currentOrbitAngle) * 50;
+      const pushBackZ = (-170 + orbitalZ) * bProgress;
 
       if (clusterRef.current) {
-        clusterRef.current.style.transform = `translate3d(0, ${bobY}px, 0) rotateX(${clusterPitch}deg) rotateY(${clusterYaw}deg) rotateZ(${clusterRoll}deg)`;
+        clusterRef.current.style.transform = `translate3d(0, ${bobY}px, ${pushBackZ}px) rotateX(${clusterPitch}deg) rotateY(${clusterYaw}deg) rotateZ(${clusterRoll}deg)`;
       }
 
       // Update Each of the 27 Cubies
-      const cubieSize = isMobile ? 64 : 76;
+      const cubieSize = isMobile ? 60 : 74;
       const baseStep = cubieSize + 4;
-      const maxExplosion = (isMobile ? 180 : 280) * sectionExplosionMult;
+      const maxExplosion = (isMobile ? 65 : 100) * sectionExplosionMult;
       const currentExplosion = bProgress * maxExplosion;
+      const tangentAngle = currentOrbitAngle + Math.PI / 2;
 
       for (let i = 0; i < CUBIES.length; i++) {
         const c = CUBIES[i];
         const el = cubieRefs.current[i];
         if (!el) continue;
 
-        // Position: Base 3x3x3 grid + radial explosion + deterministic scatter
-        const posX = c.x * (baseStep + currentExplosion) + c.scatterX * bProgress;
-        const posY = c.y * (baseStep + currentExplosion) + c.scatterY * bProgress;
+        // Subtle tangential stream along the orbit arc
+        const cubieArcOffset = ((i - 13) / 27) * 45 * bProgress;
+        const arcX = Math.cos(tangentAngle) * cubieArcOffset;
+        const arcY = Math.sin(tangentAngle) * cubieArcOffset;
+
+        // Position: Base 3x3x3 grid + radial explosion + scatter + orbital arc stream
+        const posX = c.x * (baseStep + currentExplosion) + c.scatterX * bProgress + arcX;
+        const posY = c.y * (baseStep + currentExplosion) + c.scatterY * bProgress + arcY;
         const posZ = c.z * (baseStep + currentExplosion) + c.scatterZ * bProgress;
 
-        // Local 3D tumbling (0 at hero, spins actively when broken)
+        // Local 3D tumbling (axial rotation, like Earth spinning on its axis)
         const localRx = c.spinX * (scrollY * 0.35 + time * 24) * bProgress;
         const localRy = c.spinY * (scrollY * 0.45 + time * 30) * bProgress;
         const localRz = c.spinZ * (scrollY * 0.25 + time * 18) * bProgress;
@@ -294,12 +274,12 @@ export function RubiksMotionSystem() {
         el.style.transform = `translate3d(${posX}px, ${posY}px, ${posZ}px) rotateX(${localRx}deg) rotateY(${localRy}deg) rotateZ(${localRz}deg)`;
       }
 
-      // Update Floating Emerald Accent Sphere (portfolio native green)
+      // Update Floating Emerald Accent Sphere (Moon orbiting the cluster)
       if (sphereRef.current) {
-        const sphereOrbitAngle = time * 1.8 + scrollY * 0.005;
-        const sphereRadius = 140 + bProgress * 180;
+        const sphereOrbitAngle = time * 2.2 + scrollY * 0.006;
+        const sphereRadius = 85 + bProgress * 55;
         const sphereX = Math.cos(sphereOrbitAngle) * sphereRadius;
-        const sphereY = Math.sin(sphereOrbitAngle * 0.7) * (sphereRadius * 0.6) - 40;
+        const sphereY = Math.sin(sphereOrbitAngle * 0.7) * (sphereRadius * 0.6) - 30;
         const sphereZ = Math.sin(sphereOrbitAngle) * (sphereRadius * 0.8);
         sphereRef.current.style.transform = `translate3d(${sphereX}px, ${sphereY}px, ${sphereZ}px)`;
       }
@@ -351,7 +331,8 @@ export function RubiksMotionSystem() {
 
   return (
     <div
-      className="fixed inset-0 pointer-events-none z-20 overflow-hidden select-none"
+      className={`fixed inset-0 pointer-events-none overflow-hidden select-none transition-[z-index] duration-300 ${isHeroState ? "z-20" : "z-0"
+        }`}
       style={{ perspective: "1100px" }}
     >
       {/* Dynamic 3D Stage Anchor */}
@@ -391,9 +372,12 @@ export function RubiksMotionSystem() {
               ref={(el) => {
                 cubieRefs.current[i] = el;
               }}
-              className="absolute pointer-events-auto cursor-pointer transition-shadow"
-              onClick={() => playPop()}
-              onMouseEnter={() => playTick()}
+              className={`absolute transition-shadow ${isHeroState
+                ? "pointer-events-auto cursor-pointer"
+                : "pointer-events-none"
+                }`}
+              onClick={() => isHeroState && playPop()}
+              onMouseEnter={() => isHeroState && playTick()}
               style={{
                 width: `${cubieSize}px`,
                 height: `${cubieSize}px`,
