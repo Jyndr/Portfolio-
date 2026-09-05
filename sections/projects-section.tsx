@@ -5,7 +5,7 @@ import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
 import { sortedProjects } from "@/lib/config";
 import { SectionShell } from "@/components/ui/section-shell";
 import { Button } from "@/components/ui/primitives";
-import { ConfigImage } from "@/components/common/config-image";
+import { ProjectAestheticVisual } from "@/components/common/project-aesthetic-visual";
 
 export function ProjectsSection() {
   const [currentProject, setCurrentProject] = useState(0);
@@ -56,8 +56,8 @@ export function ProjectsSection() {
                   onClick={() => setCurrentProject(idx)}
                   aria-label={`Go to project ${idx + 1}`}
                   className={`h-2 rounded-full transition-all duration-300 ${idx === currentProject
-                      ? "w-6 bg-[#1A1A1A]"
-                      : "w-2 bg-[#E8E8E5] hover:bg-[#999999]"
+                    ? "w-6 bg-[#1A1A1A]"
+                    : "w-2 bg-[#E8E8E5] hover:bg-[#999999]"
                     }`}
                 />
               ))}
@@ -155,19 +155,10 @@ export function ProjectsSection() {
                   </div>
                 </div>
 
-                {/* Right Image Frame */}
-                <div className="lg:col-span-6">
-                  <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden border border-[#E8E8E5] bg-[#1A1A1A] p-2 shadow-md">
-                    <div className="w-full h-full rounded-lg overflow-hidden bg-[#262626]">
-                      <ConfigImage
-                        src={project.image}
-                        alt={`${project.title} preview`}
-                        width={640}
-                        height={400}
-                        placeholderLabel={project.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                {/* Right Aesthetic Visual Frame */}
+                <div className="lg:col-span-6 w-full">
+                  <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden shadow-xs">
+                    <ProjectAestheticVisual projectId={project.id} />
                   </div>
                 </div>
               </div>
