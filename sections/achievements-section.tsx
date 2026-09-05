@@ -2,7 +2,6 @@ import { Trophy, Award, ExternalLink, Code2, Flame, Globe } from "lucide-react";
 import { config } from "@/lib/config";
 import { SectionShell } from "@/components/ui/section-shell";
 import { FadeIn } from "@/components/common/motion";
-import { ConfigImage } from "@/components/common/config-image";
 
 export function AchievementsSection() {
   const problemSolvingStats = [
@@ -50,18 +49,21 @@ export function AchievementsSection() {
           {config.achievements.map((item) => (
             <FadeIn key={`${item.title}-${item.year}`}>
               <div className="flex flex-col sm:flex-row gap-6 p-6 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] transition-transform hover:-translate-y-0.5">
-                {item.image ? (
-                  <div className="relative w-full sm:w-40 aspect-[4/3] shrink-0 overflow-hidden rounded-xl border border-[#E6E6E6]">
-                    <ConfigImage
-                      src={item.image}
-                      alt={item.title}
-                      width={240}
-                      height={180}
-                      placeholderLabel={item.title}
-                      className="object-cover w-full h-full"
-                    />
+                {/* Minimal Aesthetic Hackathon Honor Badge */}
+                <div className="relative w-full sm:w-44 aspect-[4/3] shrink-0 overflow-hidden rounded-xl border border-[#E8E8E5] bg-[#FAFAF8] p-4 flex flex-col items-center justify-center text-center shadow-2xs select-none">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFFFFF] border border-[#E8E8E5] shadow-xs text-[#10B981] mb-2.5">
+                    <Trophy size={22} className="text-[#10B981]" />
                   </div>
-                ) : null}
+                  <span className="text-[10px] font-mono font-bold tracking-wider text-[#10B981] uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    Winner
+                  </span>
+                  <span className="text-xs font-serif font-bold text-[#1A1A1A] mt-1.5">
+                    HackCrux 2025
+                  </span>
+                  <span className="text-[10px] font-mono text-[#888888] mt-0.5">
+                    LNMIIT Jaipur
+                  </span>
+                </div>
                 <div className="flex flex-col justify-between flex-1">
                   <div>
                     <div className="flex items-center justify-between gap-2 flex-wrap">

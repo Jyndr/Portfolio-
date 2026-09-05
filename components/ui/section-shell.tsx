@@ -36,10 +36,6 @@ export function SectionShell({
                 {title}
               </h2>
             </div>
-            <div className="text-right shrink-0 pl-4">
-              <span className="text-lg sm:text-xl font-serif font-light text-[#1A1A1A]">{index}</span>
-              <span className="text-xs font-serif text-[#999999] block -mt-1">/ {totalIndex}</span>
-            </div>
           </div>
 
           {description ? (

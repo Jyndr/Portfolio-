@@ -89,7 +89,7 @@ export function LeetCodeSection() {
       label: "Current Streak",
       value: data?.streak !== null && data?.streak !== undefined && data?.isAvailable ? `${data.streak} Days` : "--",
       icon: Zap,
-      iconBg: "bg-purple-500/12 text-purple-600",
+      iconBg: "bg-emerald-500/12 text-emerald-600",
     },
     {
       label: "Active Days",

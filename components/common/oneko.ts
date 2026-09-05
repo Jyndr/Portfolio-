@@ -80,10 +80,47 @@ export function initOneko() {
   nekoEl.onclick = tameCat;
   nekoEl.ontouchstart = tameCat;
 
+  // Helper to check if pointer or user focus is currently inside the Contact section
+  function isPointerInsideContactSection(px: number, py: number): boolean {
+    const contactEl = document.getElementById("contact");
+    if (contactEl) {
+      const rect = contactEl.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        if (px >= rect.left && px <= rect.right && py >= rect.top && py <= rect.bottom) {
+          return true;
+        }
+      }
+    }
+
+    const formEl = document.getElementById("contact-form");
+    if (formEl) {
+      const rect = formEl.getBoundingClientRect();
+      if (px >= rect.left - 20 && px <= rect.right + 20 && py >= rect.top - 20 && py <= rect.bottom + 20) {
+        return true;
+      }
+    }
+
+    if (
+      typeof document !== "undefined" &&
+      document.activeElement &&
+      (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") &&
+      document.getElementById("contact")?.contains(document.activeElement)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   const handlePointerMove = (x: number, y: number) => {
     pointerX = x;
     pointerY = y;
     lastMoveTime = Date.now();
+
+    // If pointer moves inside contact section, keep the cat silent and asleep
+    if (isPointerInsideContactSection(x, y)) {
+      return;
+    }
 
     if (idleState === "sleeping" || idleState === "sitting") {
       idleState = "idle";
@@ -137,12 +174,41 @@ export function initOneko() {
     return { x: px, y: py };
   }
 
+  let wasInContactSection = false;
+
   function tick(timestamp: number) {
     animationFrameId = requestAnimationFrame(tick);
 
     if (timestamp - lastFrameTime < 60) return;
     lastFrameTime = timestamp;
     frameCount++;
+
+    // When the user enters the contact section, the cat must stay silent and outside
+    const inContact = isPointerInsideContactSection(pointerX, pointerY);
+
+    if (inContact) {
+      wasInContactSection = true;
+      velX = 0;
+      velY = 0;
+
+      // Keep cat outside the form boundary
+      const safePos = applyContactFormObstacle(nekoPosX, nekoPosY);
+      nekoPosX = safePos.x;
+      nekoPosY = safePos.y;
+
+      // Sleep peacefully without moving or running frantically around borders
+      setSprite("sleeping", Math.floor(frameCount / 8));
+
+      nekoEl.style.left = `${Math.round(nekoPosX - 19)}px`;
+      nekoEl.style.top = `${Math.round(nekoPosY - 19)}px`;
+      return; // Skip chasing logic while user is in contact section
+    } else if (wasInContactSection) {
+      // User moved out of contact section: wake up and resume normally
+      wasInContactSection = false;
+      idleState = "idle";
+      lastMoveTime = Date.now();
+      setSprite("alert", 0);
+    }
 
     const distToPointer = Math.hypot(nekoPosX - pointerX, nekoPosY - pointerY);
     const now = Date.now();
