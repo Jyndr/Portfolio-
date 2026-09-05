@@ -17,9 +17,6 @@ interface CubieConfig {
   x: number; // -1, 0, 1
   y: number; // -1, 0, 1
   z: number; // -1, 0, 1
-  nx: number;
-  ny: number;
-  nz: number;
   scatterX: number;
   scatterY: number;
   scatterZ: number;
@@ -29,12 +26,18 @@ interface CubieConfig {
   faces: FaceColors;
 }
 
-// Portfolio-native color palette (White, Off-White, Emerald Green & Soft Mint — ZERO PURPLE)
-const COLOR_WHITE = "#FFFFFF";
-const COLOR_OFFWHITE = "#F8F8F5";
-const COLOR_CREAM = "#FAFAF8";
-const COLOR_GREEN = "#10B981"; // Emerald green
-const COLOR_MINT = "#D1FAE5";  // Soft mint
+// Portfolio-native color palette:
+// At First (Hero): ALL 6 exterior faces of the 3x3 Rubik's cube are 100% clean WHITE!
+// Subtle lighting tones provide crisp 3D volume and depth perception without any green.
+const COLOR_WHITE_TOP = "#FFFFFF";      // Brilliant overhead white
+const COLOR_WHITE_FRONT = "#FAFAF8";    // Crisp white
+const COLOR_WHITE_SIDE = "#F2F2EE";     // Subtle shaded white
+const COLOR_WHITE_BOTTOM = "#EBEBE5";   // Shaded white
+
+// Soft light green / pastel mint for tumbling accents (ONLY when broken/moving):
+// NOT dark green! Soft, airy, delicate light mint!
+const COLOR_LIGHT_MINT = "#A7F3D0";     // Soft pastel mint (Tailwind emerald-200)
+const COLOR_PALE_MINT = "#D1FAE5";      // Pale mint cream (Tailwind emerald-100)
 
 function createCubieConfigs(): CubieConfig[] {
   const configs: CubieConfig[] = [];
@@ -43,12 +46,7 @@ function createCubieConfigs(): CubieConfig[] {
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
-        const len = Math.hypot(x, y, z) || 1;
-        const nx = x === 0 && y === 0 && z === 0 ? 0 : x / len;
-        const ny = x === 0 && y === 0 && z === 0 ? 0.6 : y / len;
-        const nz = x === 0 && y === 0 && z === 0 ? 0.8 : z / len;
-
-        // Deterministic pseudo-random scatter trajectory (compact cluster)
+        // Deterministic pseudo-random scatter trajectory (from prev approved movement)
         const scatterX = Math.sin(id * 3.7 + 1.2) * 75;
         const scatterY = Math.cos(id * 2.3 + 0.8) * 80;
         const scatterZ = Math.sin(id * 5.1 + 2.1) * 75;
@@ -58,14 +56,13 @@ function createCubieConfigs(): CubieConfig[] {
         const spinY = (0.8 + ((id * 3) % 5) * 0.25) * (id % 3 === 0 ? 1 : -1);
         const spinZ = (0.6 + ((id * 7) % 4) * 0.2) * (id % 2 !== 0 ? 1 : -1);
 
+        // At First (Hero): All visible exterior faces are 100% clean white!
+        // Inner faces reveal soft light mint ONLY when broken apart.
         configs.push({
           id,
           x,
           y,
           z,
-          nx,
-          ny,
-          nz,
           scatterX,
           scatterY,
           scatterZ,
@@ -73,12 +70,12 @@ function createCubieConfigs(): CubieConfig[] {
           spinY,
           spinZ,
           faces: {
-            top: COLOR_WHITE,
-            bottom: COLOR_OFFWHITE,
-            right: COLOR_GREEN,
-            left: COLOR_CREAM,
-            front: (x + y + z) % 2 === 0 ? COLOR_GREEN : COLOR_WHITE,
-            back: COLOR_MINT,
+            top: COLOR_WHITE_TOP,
+            front: COLOR_WHITE_FRONT,
+            right: COLOR_WHITE_SIDE,
+            left: COLOR_WHITE_SIDE,
+            bottom: COLOR_WHITE_BOTTOM,
+            back: z === -1 ? COLOR_WHITE_FRONT : (id % 2 === 0 ? COLOR_LIGHT_MINT : COLOR_PALE_MINT),
           },
         });
         id++;
@@ -91,21 +88,27 @@ function createCubieConfigs(): CubieConfig[] {
 
 const CUBIES = createCubieConfigs();
 
+// The hand-picked 7 cubies that persist after the 1st slide (Hero):
+// Symmetrically distributed across corners, edges, and center faces
+const SURVIVOR_INDICES = [2, 6, 10, 12, 16, 20, 24];
+const SURVIVOR_SET = new Set(SURVIVOR_INDICES);
+
 export function RubiksMotionSystem() {
   const [mounted, setMounted] = useState(false);
   const [isHeroState, setIsHeroState] = useState(true);
 
-  // Stage references
+  // References
   const stageRef = useRef<HTMLDivElement>(null);
   const clusterRef = useRef<HTMLDivElement>(null);
   const cubieRefs = useRef<(HTMLDivElement | null)[]>([]);
   const sphereRef = useRef<HTMLDivElement>(null);
+  const hitboxRef = useRef<HTMLDivElement>(null);
 
-  // Drag rotation angles for Hero interaction
-  const rotX = useRef(-22);
-  const rotY = useRef(26);
-  const targetRotX = useRef(-22);
-  const targetRotY = useRef(26);
+  // Drag rotation angles for Hero interaction (default viewing angle)
+  const rotX = useRef(-24);
+  const rotY = useRef(32);
+  const targetRotX = useRef(-24);
+  const targetRotY = useRef(32);
   const velX = useRef(0);
   const velY = useRef(0);
   const isDragging = useRef(false);
@@ -134,16 +137,17 @@ export function RubiksMotionSystem() {
       const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
       const winW = window.innerWidth;
       const winH = window.innerHeight;
-      const docH = Math.max(
-        document.documentElement.scrollHeight - winH,
-        1
-      );
+      const docH = Math.max(document.documentElement.scrollHeight - winH, 1);
       const scrollFraction = Math.min(1, Math.max(0, scrollY / docH));
       const isMobile = winW < 768;
 
-      // Calculate breaking progress (0 at hero, smoothly ramps to 1 as user scrolls past 300px)
+      // Base cubie sizing: prominent size that matches the hero corner perfectly
+      const cubieSize = isMobile ? 68 : 84;
+      const baseStep = cubieSize + 4;
+
+      // --- BREAKING PROGRESS ---
+      // Ramps from 0 at Hero to 1 as user scrolls away
       const rawBreak = Math.min(1, Math.max(0, (scrollY - 20) / 280));
-      // Smooth cubic step
       const targetBreak = rawBreak * rawBreak * (3 - 2 * rawBreak);
       smoothBreakRef.current += (targetBreak - smoothBreakRef.current) * 0.12;
       const bProgress = smoothBreakRef.current;
@@ -155,7 +159,7 @@ export function RubiksMotionSystem() {
         setIsHeroState(nextIsHero);
       }
 
-      // Drag inertia & damping (when at Hero)
+      // Drag inertia & damping (active at Hero)
       if (isDragging.current) {
         rotX.current += (targetRotX.current - rotX.current) * 0.45;
         rotY.current += (targetRotY.current - rotY.current) * 0.45;
@@ -169,17 +173,16 @@ export function RubiksMotionSystem() {
           targetRotY.current = rotY.current;
         } else {
           // Continuous gentle idle orbit
-          rotY.current += 0.12;
+          rotY.current += 0.10;
           targetRotY.current = rotY.current;
         }
       }
       rotX.current = Math.max(-65, Math.min(65, rotX.current));
 
-      // Calculate Screen Coordinates (Waypoints) across the sections:
-      // Hero anchor position
+      // Measure Hero Anchor Position (placed down in the corner)
       const heroAnchor = document.getElementById("hero-cube-anchor");
-      let heroX = winW * 0.72;
-      let heroY = winH * 0.48;
+      let heroX = winW * 0.80;
+      let heroY = winH * 0.65;
 
       if (heroAnchor) {
         const rect = heroAnchor.getBoundingClientRect();
@@ -187,9 +190,15 @@ export function RubiksMotionSystem() {
         heroY = rect.top + rect.height / 2;
       } else if (isMobile) {
         heroX = winW * 0.5;
-        heroY = winH * 0.55;
+        heroY = winH * 0.58;
       }
 
+      if (hitboxRef.current) {
+        hitboxRef.current.style.left = `${heroX}px`;
+        hitboxRef.current.style.top = `${heroY}px`;
+      }
+
+      // --- PREVIOUS REVOLVING MOVEMENT LOGIC (Restored with 100% Fidelity) ---
       // User is the Sun at viewport center: (sunX, sunY)
       // Cubes are Earth revolving around the user in a 3D celestial orbit
       const sunX = winW * 0.5;
@@ -207,7 +216,7 @@ export function RubiksMotionSystem() {
 
       let targetX = heroX;
       let targetY = heroY;
-      let sectionExplosionMult = 0.8;
+      const sectionExplosionMult = 0.8;
 
       if (bProgress > 0.01) {
         // Planetary orbital ellipse around the user (Sun)
@@ -220,23 +229,27 @@ export function RubiksMotionSystem() {
       }
 
       // Smooth position interpolation (lerp)
-      currentPosRef.current.x += (targetX - currentPosRef.current.x) * 0.15;
-      currentPosRef.current.y += (targetY - currentPosRef.current.y) * 0.15;
+      if (currentPosRef.current.x === 0 && currentPosRef.current.y === 0) {
+        currentPosRef.current.x = heroX;
+        currentPosRef.current.y = heroY;
+      } else {
+        currentPosRef.current.x += (targetX - currentPosRef.current.x) * 0.15;
+        currentPosRef.current.y += (targetY - currentPosRef.current.y) * 0.15;
+      }
 
       // Position Stage Center
       if (stageRef.current) {
-        stageRef.current.style.left = `${currentPosRef.current.x}px`;
-        stageRef.current.style.top = `${currentPosRef.current.y}px`;
+        stageRef.current.style.transform = `translate3d(${currentPosRef.current.x}px, ${currentPosRef.current.y}px, 0px)`;
       }
 
       // 3D Revolution Angles of the Whole Cluster
       // Like Earth tilted at an angle, revolving and rotating in 3D
-      const clusterPitch = rotX.current + (Math.sin(scrollY * 0.002 + time * 0.5) * 16) * bProgress;
+      const clusterPitch = rotX.current + Math.sin(scrollY * 0.002 + time * 0.5) * 16 * bProgress;
       const clusterYaw = rotY.current + (scrollY * 0.20 + time * 14) * bProgress;
       const clusterRoll = (scrollY * 0.06 + Math.cos(time * 0.4) * 10) * bProgress;
       const bobY = Math.sin(time * 1.6) * (bProgress > 0.5 ? 10 : 6);
 
-      // Deep 3D perspective pushback so cubes are strictly in the background
+      // Deep 3D perspective pushback so cubes stay in the background and don't block text
       const orbitalZ = Math.sin(currentOrbitAngle) * 50;
       const pushBackZ = (-170 + orbitalZ) * bProgress;
 
@@ -244,44 +257,115 @@ export function RubiksMotionSystem() {
         clusterRef.current.style.transform = `translate3d(0, ${bobY}px, ${pushBackZ}px) rotateX(${clusterPitch}deg) rotateY(${clusterYaw}deg) rotateZ(${clusterRoll}deg)`;
       }
 
-      // Update Each of the 27 Cubies
-      const cubieSize = isMobile ? 60 : 74;
-      const baseStep = cubieSize + 4;
+      // --- CUBIE EXPLOSION & TANGENTIAL ARC STREAM ---
       const maxExplosion = (isMobile ? 65 : 100) * sectionExplosionMult;
       const currentExplosion = bProgress * maxExplosion;
       const tangentAngle = currentOrbitAngle + Math.PI / 2;
+
+      // Slice sliding angles during early scroll
+      const slideTopDeg = bProgress < 0.3 ? Math.min(1, Math.max(0, scrollY / 140)) * 90 : 0;
+      const slideRightDeg = bProgress < 0.3 ? Math.min(1, Math.max(0, (scrollY - 140) / 140)) * 90 : 0;
+
+      // Cubies dynamically reduce in size after the first slide (from 1.0 down to ~0.50)
+      const cubieScale = 1 - bProgress * 0.50;
 
       for (let i = 0; i < CUBIES.length; i++) {
         const c = CUBIES[i];
         const el = cubieRefs.current[i];
         if (!el) continue;
 
-        // Subtle tangential stream along the orbit arc
-        const cubieArcOffset = ((i - 13) / 27) * 45 * bProgress;
-        const arcX = Math.cos(tangentAngle) * cubieArcOffset;
-        const arcY = Math.sin(tangentAngle) * cubieArcOffset;
+        const isSurvivor = SURVIVOR_SET.has(i);
 
-        // Position: Base 3x3x3 grid + radial explosion + scatter + orbital arc stream
-        const posX = c.x * (baseStep + currentExplosion) + c.scatterX * bProgress + arcX;
-        const posY = c.y * (baseStep + currentExplosion) + c.scatterY * bProgress + arcY;
-        const posZ = c.z * (baseStep + currentExplosion) + c.scatterZ * bProgress;
+        // Only a few cubies (7 total) persist after the first slide; the other 20 fade out cleanly
+        let opacity = 1;
+        let currentScale = cubieScale;
+
+        if (!isSurvivor) {
+          if (bProgress <= 0.05) {
+            opacity = 1;
+            currentScale = 1;
+          } else {
+            const fade = Math.max(0, 1 - (bProgress - 0.05) / 0.28);
+            opacity = fade;
+            currentScale = cubieScale * fade;
+            if (fade <= 0.001) {
+              el.style.display = "none";
+              continue;
+            }
+          }
+        }
+        el.style.display = "block";
+        el.style.opacity = `${opacity}`;
+
+        // Base grid offset
+        let bx = c.x * (baseStep + currentExplosion);
+        let by = c.y * (baseStep + currentExplosion);
+        let bz = c.z * (baseStep + currentExplosion);
+        let sliceRotX = 0;
+        let sliceRotY = 0;
+
+        // Subtle slice solving twist at the very beginning before full break
+        if (bProgress < 0.2) {
+          if (c.y === -1 && Math.abs(slideTopDeg) > 0.01) {
+            const rad = (slideTopDeg * Math.PI) / 180;
+            const xNew = bx * Math.cos(rad) - bz * Math.sin(rad);
+            const zNew = bx * Math.sin(rad) + bz * Math.cos(rad);
+            bx = xNew;
+            bz = zNew;
+            sliceRotY = slideTopDeg;
+          }
+          if (c.x === 1 && Math.abs(slideRightDeg) > 0.01) {
+            const rad = (slideRightDeg * Math.PI) / 180;
+            const yNew = by * Math.cos(rad) - bz * Math.sin(rad);
+            const zNew = by * Math.sin(rad) + bz * Math.cos(rad);
+            by = yNew;
+            bz = zNew;
+            sliceRotX = slideRightDeg;
+          }
+        }
+
+        // Tangential stream along the orbit arc:
+        // Survivors are gracefully distributed across the celestial orbit
+        let arcX = 0;
+        let arcY = 0;
+
+        if (isSurvivor) {
+          const survivorOrder = SURVIVOR_INDICES.indexOf(i); // 0 to 6
+          const arcSpread = (survivorOrder - 3) * (isMobile ? 55 : 85) * bProgress;
+          arcX = Math.cos(tangentAngle) * arcSpread;
+          arcY = Math.sin(tangentAngle) * arcSpread;
+        } else {
+          const cubieArcOffset = ((i - 13) / 27) * 40 * bProgress;
+          arcX = Math.cos(tangentAngle) * cubieArcOffset;
+          arcY = Math.sin(tangentAngle) * cubieArcOffset;
+        }
+
+        // Position: Base grid + radial explosion + scatter + orbital arc stream
+        const posX = bx + c.scatterX * bProgress + arcX;
+        const posY = by + c.scatterY * bProgress + arcY;
+        const posZ = bz + c.scatterZ * bProgress;
 
         // Local 3D tumbling (axial rotation, like Earth spinning on its axis)
-        const localRx = c.spinX * (scrollY * 0.35 + time * 24) * bProgress;
-        const localRy = c.spinY * (scrollY * 0.45 + time * 30) * bProgress;
+        const localRx = sliceRotX * (1 - bProgress) + c.spinX * (scrollY * 0.35 + time * 24) * bProgress;
+        const localRy = sliceRotY * (1 - bProgress) + c.spinY * (scrollY * 0.45 + time * 30) * bProgress;
         const localRz = c.spinZ * (scrollY * 0.25 + time * 18) * bProgress;
 
-        el.style.transform = `translate3d(${posX}px, ${posY}px, ${posZ}px) rotateX(${localRx}deg) rotateY(${localRy}deg) rotateZ(${localRz}deg)`;
+        el.style.transform = `translate3d(${posX}px, ${posY}px, ${posZ}px) rotateX(${localRx}deg) rotateY(${localRy}deg) rotateZ(${localRz}deg) scale3d(${currentScale}, ${currentScale}, ${currentScale})`;
       }
 
-      // Update Floating Emerald Accent Sphere (Moon orbiting the cluster)
+      // Update Floating Soft-Mint Accent Sphere (Moon orbiting the cluster)
       if (sphereRef.current) {
-        const sphereOrbitAngle = time * 2.2 + scrollY * 0.006;
-        const sphereRadius = 85 + bProgress * 55;
-        const sphereX = Math.cos(sphereOrbitAngle) * sphereRadius;
-        const sphereY = Math.sin(sphereOrbitAngle * 0.7) * (sphereRadius * 0.6) - 30;
-        const sphereZ = Math.sin(sphereOrbitAngle) * (sphereRadius * 0.8);
-        sphereRef.current.style.transform = `translate3d(${sphereX}px, ${sphereY}px, ${sphereZ}px)`;
+        if (bProgress < 0.05) {
+          sphereRef.current.style.opacity = "0";
+        } else {
+          sphereRef.current.style.opacity = `${Math.min(1, (bProgress - 0.05) * 4)}`;
+          const sphereOrbitAngle = time * 2.2 + scrollY * 0.006;
+          const sphereRadius = 85 + bProgress * 55;
+          const sphereX = Math.cos(sphereOrbitAngle) * sphereRadius;
+          const sphereY = Math.sin(sphereOrbitAngle * 0.7) * (sphereRadius * 0.6) - 30;
+          const sphereZ = Math.sin(sphereOrbitAngle) * (sphereRadius * 0.8);
+          sphereRef.current.style.transform = `translate3d(${sphereX}px, ${sphereY}px, ${sphereZ}px)`;
+        }
       }
 
       animId = requestAnimationFrame(tick);
@@ -326,43 +410,49 @@ export function RubiksMotionSystem() {
 
   if (!mounted) return null;
 
-  const cubieSize = 76;
+  const cubieSize = 84;
   const halfSize = cubieSize / 2;
 
   return (
     <div
-      className={`fixed inset-0 pointer-events-none overflow-hidden select-none transition-[z-index] duration-300 ${isHeroState ? "z-20" : "z-0"
+      className={`fixed inset-0 pointer-events-none select-none transition-[z-index] duration-300 ${isHeroState ? "z-20" : "z-0"
         }`}
       style={{ perspective: "1100px" }}
     >
+      {/* Invisible hit-box at Hero for seamless drag capture */}
+      {isHeroState && (
+        <div
+          ref={hitboxRef}
+          className="absolute w-[440px] h-[440px] rounded-full cursor-grab active:cursor-grabbing pointer-events-auto"
+          style={{
+            transform: "translate(-50%, -50%)",
+            zIndex: 9999,
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        />
+      )}
+
       {/* Dynamic 3D Stage Anchor */}
       <div
         ref={stageRef}
-        className="absolute w-0 h-0"
+        className="absolute pointer-events-none"
         style={{
+          left: 0,
+          top: 0,
+          width: "0px",
+          height: "0px",
           transformStyle: "preserve-3d",
-          pointerEvents: "none",
         }}
       >
-        {/* Invisible hit-box at Hero for seamless drag capture */}
-        {isHeroState && (
-          <div
-            className="absolute -left-[180px] -top-[180px] w-[360px] h-[360px] rounded-full cursor-grab active:cursor-grabbing pointer-events-auto"
-            style={{ transform: "translateZ(80px)" }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-          />
-        )}
-
         {/* Revolving 3D Cluster */}
         <div
           ref={clusterRef}
-          className={`relative w-0 h-0 ${isHeroState ? "cursor-grab active:cursor-grabbing" : ""}`}
+          className="relative pointer-events-none"
           style={{
             transformStyle: "preserve-3d",
-            willChange: "transform",
           }}
         >
           {/* 27 Cubies */}
@@ -372,9 +462,7 @@ export function RubiksMotionSystem() {
               ref={(el) => {
                 cubieRefs.current[i] = el;
               }}
-              className={`absolute transition-shadow ${isHeroState
-                ? "pointer-events-auto cursor-pointer"
-                : "pointer-events-none"
+              className={`absolute ${isHeroState ? "pointer-events-auto cursor-pointer" : "pointer-events-none"
                 }`}
               onClick={() => isHeroState && playPop()}
               onMouseEnter={() => isHeroState && playTick()}
@@ -385,79 +473,83 @@ export function RubiksMotionSystem() {
                 top: `-${halfSize}px`,
                 transformStyle: "preserve-3d",
                 transformOrigin: "50% 50% 0px",
-                willChange: "transform",
               }}
             >
-              {/* Front (Z+) */}
+              {/* Front Face (Z+) - 100% White at first */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.front,
-                  transform: `rotateY(0deg) translateZ(${halfSize}px)`,
+                  transform: `translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.7), inset 0 2px 4px rgba(0,0,0,0.05)",
                 }}
               />
-              {/* Back (Z-) */}
+              {/* Back Face (Z-) - Soft Light Mint (revealed when broken) */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.back,
                   transform: `rotateY(180deg) translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.5), inset 0 2px 4px rgba(0,0,0,0.05)",
                 }}
               />
-              {/* Right (X+) */}
+              {/* Right Face (X+) - 100% White (subtle shaded tone) */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.right,
                   transform: `rotateY(90deg) translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 2px 4px rgba(0,0,0,0.05)",
                 }}
               />
-              {/* Left (X-) */}
+              {/* Left Face (X-) - 100% White (subtle shaded tone) */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.left,
                   transform: `rotateY(-90deg) translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 2px 4px rgba(0,0,0,0.05)",
                 }}
               />
-              {/* Top (Y-) */}
+              {/* Top Face (Y-) - 100% Brilliant White */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.top,
                   transform: `rotateX(90deg) translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.8), inset 0 2px 4px rgba(0,0,0,0.04)",
                 }}
               />
-              {/* Bottom (Y+) */}
+              {/* Bottom Face (Y+) - 100% White (subtle shaded tone) */}
               <div
-                className="absolute inset-0 rounded-[10px] border-[2px] border-[#1A1A1A] overflow-hidden"
+                className="absolute inset-0 rounded-[12px] border-[2px] border-[#1A1A1A]"
                 style={{
                   backgroundColor: c.faces.bottom,
                   transform: `rotateX(-90deg) translateZ(${halfSize}px)`,
                   backfaceVisibility: "hidden",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.5), inset 0 2px 4px rgba(0,0,0,0.06)",
                 }}
               />
             </div>
           ))}
 
-          {/* Floating Emerald Accent Sphere (Green, NO PURPLE) */}
+          {/* Floating Soft-Mint Accent Sphere (Moon) */}
           <div
             ref={sphereRef}
-            className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.5)] pointer-events-none"
+            className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-[#A7F3D0] shadow-[0_0_15px_rgba(167,243,208,0.7)] pointer-events-none transition-opacity duration-300"
             style={{
               transformStyle: "preserve-3d",
-              willChange: "transform",
             }}
           />
         </div>
