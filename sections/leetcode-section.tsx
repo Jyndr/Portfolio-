@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Flame, CheckCircle, TrendingUp, Award, Trophy, Globe, Zap, Calendar } from "lucide-react";
-import { SectionShell } from "@/components/ui/section-shell";
+import { Flame, CheckCircle, TrendingUp, Award, Trophy, Globe, Zap, ArrowUpRight } from "lucide-react";
 import { InteractiveHeatmap, HeatmapDay } from "@/components/common/heatmap";
 import { config } from "@/lib/config";
+import { FadeIn } from "@/components/common/motion";
+import { Container } from "@/components/ui/primitives";
+import { playPop, playTick } from "@/lib/sound";
 
 type LeetCodeData = {
   isAvailable: boolean;
@@ -41,115 +43,140 @@ export function LeetCodeSection() {
     loadLeetCodeData();
   }, []);
 
-  const formatStat = (val: number | null | undefined): string => {
-    if (val === null || val === undefined || data?.isAvailable === false) {
-      return "--";
-    }
-    return val.toLocaleString();
-  };
-
-  const stats = [
-    {
-      label: "Total Solved",
-      value: formatStat(data?.totalSolved),
-      icon: Flame,
-      iconBg: "bg-emerald-500/12 text-emerald-600",
-    },
-    {
-      label: "Easy Solved",
-      value: formatStat(data?.easySolved),
-      icon: CheckCircle,
-      iconBg: "bg-green-500/12 text-green-600",
-    },
-    {
-      label: "Medium Solved",
-      value: formatStat(data?.mediumSolved),
-      icon: TrendingUp,
-      iconBg: "bg-amber-500/12 text-amber-600",
-    },
-    {
-      label: "Hard Solved",
-      value: formatStat(data?.hardSolved),
-      icon: Award,
-      iconBg: "bg-rose-500/12 text-rose-600",
-    },
-    {
-      label: "Contest Rating",
-      value: formatStat(data?.contestRating ?? data?.rating),
-      icon: Trophy,
-      iconBg: "bg-orange-500/12 text-orange-600",
-    },
-    {
-      label: "Global Rank",
-      value: formatStat(data?.globalRanking),
-      icon: Globe,
-      iconBg: "bg-sky-500/12 text-sky-600",
-    },
-    {
-      label: "Current Streak",
-      value: data?.streak !== null && data?.streak !== undefined && data?.isAvailable ? `${data.streak} Days` : "--",
-      icon: Zap,
-      iconBg: "bg-purple-500/12 text-purple-600",
-    },
-    {
-      label: "Active Days",
-      value: formatStat(data?.totalActiveDays),
-      icon: Calendar,
-      iconBg: "bg-teal-500/12 text-teal-600",
-    },
-  ];
+  const totalSolved = data?.totalSolved ?? config.problemSolving.totalSolved;
+  const contestRating = data?.contestRating ?? config.problemSolving.leetcode.maxRating;
 
   return (
-    <SectionShell
-      id="leetcode"
-      index="06"
-      label="PROBLEM SOLVING"
-      title="LeetCode"
-      description="Consistent practice. Steady progress."
-      quote="One problem at a time."
-    >
-      <div className="flex flex-col gap-6">
-        {/* Top 8 Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {stats.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.label}
-                className="flex items-center gap-3.5 p-4 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:-translate-y-1 hover:shadow-md transition-all duration-200"
-              >
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} shrink-0`}>
-                  <Icon size={19} />
-                </div>
-                <div>
-                  <span className="text-xl sm:text-2xl font-serif font-extrabold text-[#1A1A1A] block">
-                    {item.value}
-                  </span>
-                  <span className="text-xs font-medium text-[#666666] block">{item.label}</span>
-                </div>
-              </div>
-            );
-          })}
+    <section id="leetcode" className="py-24 sm:py-32 relative scroll-mt-12 bg-[#F7F7F7]">
+      <Container className="px-6 sm:px-10 lg:px-14">
+        {/* Section Header with Dev Ashish typography */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/10 pb-8">
+          <div>
+            <span className="text-xs font-mono uppercase tracking-widest text-[#8B69FA] font-semibold block mb-2">
+              04 / PROBLEM SOLVING
+            </span>
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-[#1C1C1C] leading-[0.95]">
+              CODE{" "}
+              <span className="font-serif italic font-normal text-[#8B69FA] lowercase">
+                metrics
+              </span>
+            </h2>
+          </div>
+
+          <a
+            href={config.socials.leetcode.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => playPop()}
+            onMouseEnter={() => playTick()}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-black/10 shadow-xs hover:shadow-sm text-xs font-mono font-semibold text-[#1C1C1C] hover:text-[#8B69FA] transition-all"
+          >
+            <span>LeetCode Profile</span>
+            <ArrowUpRight size={13} />
+          </a>
         </div>
 
-        {/* Contribution Heatmap Dashboard Card */}
-        <div className="p-6 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#666666]">
-              Problem Solving Activity
-            </h4>
-            <a
-              href={config.socials.leetcode.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-semibold text-[#1A1A1A] hover:underline"
-            >
-              View Profile ↗
-            </a>
-          </div>
-          <InteractiveHeatmap data={data?.heatmap || []} variant="leetcode" />
+        {/* Story Intro */}
+        <FadeIn className="mt-8 max-w-3xl">
+          <p className="text-base sm:text-lg text-[#707070] leading-relaxed">
+            Consistent competitive programming practice sharpens system design instincts. Tracking problem-solving velocity, contest ratings, and daily coding heatmaps across platforms.
+          </p>
+        </FadeIn>
+
+        {/* Platform Overview Cards (LeetCode, Codeforces, CodeChef) */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* LeetCode Card */}
+          <FadeIn className="p-7 rounded-[28px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[#FFF7ED] text-[#EA580C] border border-[#FED7AA]">
+                  LEETCODE
+                </span>
+                <Trophy size={16} className="text-[#EA580C]" />
+              </div>
+              <span className="text-3xl sm:text-4xl font-black text-[#1C1C1C] tracking-tight block">
+                {totalSolved}+
+              </span>
+              <span className="text-xs font-mono text-[#707070] mt-0.5 block">Problems Solved</span>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-mono">
+              <span className="text-[#707070]">Contest Rating</span>
+              <span className="font-bold text-[#1C1C1C]">{contestRating}</span>
+            </div>
+          </FadeIn>
+
+          {/* Codeforces Card */}
+          <FadeIn className="p-7 rounded-[28px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">
+                  CODEFORCES
+                </span>
+                <Globe size={16} className="text-[#2563EB]" />
+              </div>
+              <span className="text-3xl sm:text-4xl font-black text-[#1C1C1C] tracking-tight block">
+                {config.problemSolving.codeforces.rank}
+              </span>
+              <span className="text-xs font-mono text-[#707070] mt-0.5 block">
+                Rating: {config.problemSolving.codeforces.maxRating}
+              </span>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-mono">
+              <span className="text-[#707070]">Handle</span>
+              <span className="font-bold text-[#1C1C1C]">Jat1nX</span>
+            </div>
+          </FadeIn>
+
+          {/* CodeChef Card */}
+          <FadeIn className="p-7 rounded-[28px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]">
+                  CODECHEF
+                </span>
+                <Award size={16} className="text-[#7C3AED]" />
+              </div>
+              <span className="text-3xl sm:text-4xl font-black text-[#1C1C1C] tracking-tight block">
+                {config.problemSolving.codechef.maxRating}
+              </span>
+              <span className="text-xs font-mono text-[#707070] mt-0.5 block">Max Contest Rating</span>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-mono">
+              <span className="text-[#707070]">Global Rank</span>
+              <span className="font-bold text-[#1C1C1C]">#{config.problemSolving.codechef.bestGlobalRank}</span>
+            </div>
+          </FadeIn>
         </div>
-      </div>
-    </SectionShell>
+
+        {/* Heatmap Card (Dev Ashish clean container style) */}
+        <FadeIn className="mt-8 p-7 sm:p-9 rounded-[32px] bg-white border border-black/10 shadow-xs">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-100">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-[#8B69FA] font-bold block">
+                DAILY CODING LOG
+              </span>
+              <h3 className="text-lg sm:text-xl font-bold text-[#1C1C1C] mt-0.5">
+                LeetCode Submissions &amp; Activity
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+              <span className="text-xs font-mono text-[#707070] hidden sm:inline">Active</span>
+            </div>
+          </div>
+
+          <div className="w-full overflow-x-auto">
+            <InteractiveHeatmap
+              data={data?.heatmap}
+              variant="leetcode"
+            />
+          </div>
+        </FadeIn>
+      </Container>
+    </section>
   );
 }
