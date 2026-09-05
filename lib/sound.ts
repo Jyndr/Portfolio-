@@ -1,4 +1,4 @@
-// Web Audio API micro-sound synthesizer for Dev Ashish Dewangan style sound effects
+// Web Audio API micro-sound synthesizer for tactile UI interactions
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
@@ -6,7 +6,9 @@ let soundEnabled = true;
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AudioContextClass) {
       audioCtx = new AudioContextClass();
     }
@@ -19,7 +21,7 @@ function getAudioContext(): AudioContext | null {
 
 export function isSoundEnabled(): boolean {
   if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("dev_sound_enabled");
+    const saved = localStorage.getItem("portfolio_sound_enabled");
     if (saved !== null) {
       soundEnabled = saved === "true";
     }
@@ -30,7 +32,7 @@ export function isSoundEnabled(): boolean {
 export function toggleSound(): boolean {
   soundEnabled = !isSoundEnabled();
   if (typeof window !== "undefined") {
-    localStorage.setItem("dev_sound_enabled", String(soundEnabled));
+    localStorage.setItem("portfolio_sound_enabled", String(soundEnabled));
     window.dispatchEvent(new CustomEvent("sound-state-change", { detail: soundEnabled }));
   }
   if (soundEnabled) {
@@ -121,4 +123,3 @@ export function playChime() {
     // Audio failures silently ignored
   }
 }
-

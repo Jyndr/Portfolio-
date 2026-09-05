@@ -5,24 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --background: #F7F7F7;
-  --foreground: #1C1C1C;
-  --muted: #EBEBEB;
-  --muted-foreground: #707070;
-  --border: #E5E7EB;
-  --card: #FFFFFF;
-  --accent: #8B69FA;
-  --accent-soft: #F9F2FF;
-  --radius: 24px;
-  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.04);
+  --background: #F8F8F5;
+  --foreground: #1A1A1A;
+  --muted: #F5F5F2;
+  --muted-foreground: #666666;
+  --border: #E8E8E5;
+  --card: #FAFAF8;
+  --accent: #1A1A1A;
+  --accent-soft: #F0F0ED;
+  --radius: 16px;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.02);
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
   --font-handwriting: 'Caveat', cursive;
-  --token-lavender: #8B69FA;
-  --token-lavender-soft: #EDE9FE;
-  --token-footer-bg: #F9F2FF;
-  --token-tag-green: #EDFFE3;
-  --token-tag-green-text: #30734D;
 }
 
 * {
@@ -47,34 +42,6 @@ body {
 
 .font-handwriting {
   font-family: var(--font-handwriting);
-}
-
-/* Dev Ashish Dewangan typography formula */
-.font-display-grotesque {
-  font-family: var(--font-sans);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-}
-
-.font-italic-accent {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  color: var(--token-lavender);
-  text-transform: lowercase;
-}
-
-.tag-badge-green {
-  background-color: var(--token-tag-green);
-  color: var(--token-tag-green-text);
-  border: 1px solid rgba(48, 115, 77, 0.2);
-}
-
-.tag-badge-lavender {
-  background-color: var(--token-footer-bg);
-  color: #6D28D9;
-  border: 1px solid rgba(139, 105, 250, 0.2);
 }
 
 .page-section {

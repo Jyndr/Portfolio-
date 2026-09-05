@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GitBranch, Star, Users, GitCommit, ArrowUpRight, FolderGit2 } from "lucide-react";
+import { GitBranch, Star, Users, FolderGit2, GitCommit } from "lucide-react";
+import { SectionShell } from "@/components/ui/section-shell";
 import { InteractiveHeatmap, HeatmapDay } from "@/components/common/heatmap";
 import { config } from "@/lib/config";
-import { FadeIn } from "@/components/common/motion";
-import { Container } from "@/components/ui/primitives";
-import { playPop, playTick } from "@/lib/sound";
 
 type GitHubPinnedRepo = {
   name: string;
@@ -62,139 +60,119 @@ export function GitHubSection() {
       label: "Total Contributions",
       value: formatStat(data?.totalContributions),
       icon: GitCommit,
+      iconBg: "bg-emerald-500/12 text-emerald-600",
     },
     {
       label: "Repositories",
       value: formatStat(data?.repositories),
       icon: GitBranch,
+      iconBg: "bg-emerald-500/12 text-emerald-600",
     },
     {
       label: "Total Stars",
       value: formatStat(data?.totalStars),
       icon: Star,
+      iconBg: "bg-amber-500/12 text-amber-600",
     },
     {
       label: "Followers",
       value: formatStat(data?.followers),
       icon: Users,
+      iconBg: "bg-blue-500/12 text-blue-600",
     },
   ];
 
   const pinnedList = data?.pinnedRepositories ?? data?.pinnedRepos ?? [];
+  const totalContributionsText = data?.totalContributions !== null && data?.totalContributions !== undefined && data?.isAvailable
+    ? `${data.totalContributions.toLocaleString()} contributions in the last year`
+    : "Contributions in the last year";
 
   return (
-    <section id="github" className="py-24 sm:py-32 relative scroll-mt-12 bg-[#F7F7F7]">
-      <Container className="px-6 sm:px-10 lg:px-14">
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/10 pb-8">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8B69FA] font-semibold block mb-2">
-              05 / OPEN SOURCE
-            </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-[#1C1C1C] leading-[0.95]">
-              GITHUB{" "}
-              <span className="font-serif italic font-normal text-[#8B69FA] lowercase">
-                activity
-              </span>
-            </h2>
-          </div>
-
-          <a
-            href={config.socials.github.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => playPop()}
-            onMouseEnter={() => playTick()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-black/10 shadow-xs hover:shadow-sm text-xs font-mono font-semibold text-[#1C1C1C] hover:text-[#8B69FA] transition-all"
-          >
-            <span>GitHub Profile</span>
-            <ArrowUpRight size={13} />
-          </a>
-        </div>
-
-        {/* 4 Stat Overview Cards */}
-        <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <SectionShell
+      id="github"
+      index="07"
+      label="OPEN SOURCE"
+      title="GitHub"
+      description="Building in public."
+      quote="Code. Commit. Grow."
+    >
+      <div className="flex flex-col gap-6">
+        {/* Top 4 Stat Cards - Uniform Design */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {stats.map((item) => {
             const Icon = item.icon;
             return (
-              <FadeIn key={item.label}>
-                <div
-                  onMouseEnter={() => playTick()}
-                  className="p-6 rounded-[24px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all hover:scale-[1.02]"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-[#F7F7F7] text-[#1C1C1C] flex items-center justify-center mb-4">
-                    <Icon size={16} />
-                  </div>
-                  <span className="text-2xl sm:text-3xl font-black text-[#1C1C1C] tracking-tight block">
+              <div
+                key={item.label}
+                className="flex items-center gap-3.5 p-4 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:-translate-y-1 hover:shadow-md transition-all duration-200"
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} shrink-0`}>
+                  <Icon size={19} />
+                </div>
+                <div>
+                  <span className="text-xl sm:text-2xl font-serif font-extrabold text-[#1A1A1A] block">
                     {item.value}
                   </span>
-                  <span className="text-xs font-mono text-[#707070] mt-1 block">
-                    {item.label}
-                  </span>
+                  <span className="text-xs font-medium text-[#666666] block">{item.label}</span>
                 </div>
-              </FadeIn>
+              </div>
             );
           })}
         </div>
 
-        {/* Contribution Calendar Heatmap Card */}
-        <FadeIn className="mt-8 p-7 sm:p-9 rounded-[32px] bg-white border border-black/10 shadow-xs">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-100">
+        {/* Contribution Heatmap Container */}
+        <div className="p-6 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-1">
             <div>
-              <span className="text-xs font-mono uppercase tracking-wider text-[#8B69FA] font-bold block">
-                ANNUAL COMMIT CALENDAR
-              </span>
-              <h3 className="text-lg sm:text-xl font-bold text-[#1C1C1C] mt-0.5">
-                Public Contributions &amp; Commits
-              </h3>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#666666]">
+                Contribution Heatmap
+              </h4>
+              <p className="text-sm font-bold text-[#16a34a] mt-0.5">
+                {totalContributionsText}
+              </p>
             </div>
-            <span className="text-xs font-mono text-[#707070] hidden sm:inline">
-              @{config.socials.github.username}
-            </span>
+            <a
+              href={config.socials.github.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-[#1A1A1A] hover:underline shrink-0"
+            >
+              GitHub Profile ↗
+            </a>
           </div>
+          <InteractiveHeatmap data={data?.contributionCalendar ?? data?.heatmap ?? []} variant="github" />
+        </div>
 
-          <div className="w-full overflow-x-auto">
-            <InteractiveHeatmap
-              data={data?.heatmap ?? data?.contributionCalendar}
-              variant="github"
-            />
-          </div>
-        </FadeIn>
-
-        {/* Pinned Repositories Grid (if available) */}
+        {/* Pinned Repositories Row */}
         {pinnedList.length > 0 && (
-          <div className="mt-8">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#8B69FA] font-bold block mb-4">
-              PINNED REPOSITORIES
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pinnedList.map((repo) => (
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#666666] mb-3">
+              Pinned Repositories
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {pinnedList.slice(0, 3).map((repo) => (
                 <a
                   key={repo.name}
                   href={repo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => playPop()}
-                  onMouseEnter={() => playTick()}
-                  className="p-5 rounded-[22px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all hover:scale-[1.01] flex flex-col justify-between group"
+                  className="flex flex-col justify-between p-4 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] hover:-translate-y-1 hover:shadow-md transition-all duration-200 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-[#1C1C1C] group-hover:text-[#8B69FA] transition-colors">
-                        <FolderGit2 size={15} />
-                        <span>{repo.name}</span>
-                      </div>
-                      <ArrowUpRight size={13} className="text-[#707070] group-hover:text-[#8B69FA] transition-colors" />
+                    <div className="flex items-center gap-2 mb-2">
+                      <FolderGit2 size={16} className="text-[#1A1A1A]" />
+                      <span className="text-xs font-bold text-[#1A1A1A] truncate">{repo.name}</span>
                     </div>
-                    <p className="text-xs text-[#707070] line-clamp-2 leading-relaxed">
-                      {repo.description || "Open source project on GitHub."}
-                    </p>
+                    <p className="text-xs text-[#666666] line-clamp-2">{repo.description || "No description provided."}</p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] font-mono text-[#707070]">
-                    <span>{repo.language}</span>
-                    <span className="flex items-center gap-1">
-                      <Star size={12} className="text-amber-500 fill-amber-500" />
-                      <span>{repo.stars}</span>
+                  <div className="mt-4 flex items-center justify-between text-xs text-[#666666]">
+                    <span className="flex items-center gap-1 font-mono">
+                      <span className="w-2 h-2 rounded-full bg-[#1A1A1A]" />
+                      {repo.language}
+                    </span>
+                    <span className="flex items-center gap-1 font-medium">
+                      <Star size={12} />
+                      {repo.stars}
                     </span>
                   </div>
                 </a>
@@ -202,7 +180,7 @@ export function GitHubSection() {
             </div>
           </div>
         )}
-      </Container>
-    </section>
+      </div>
+    </SectionShell>
   );
 }

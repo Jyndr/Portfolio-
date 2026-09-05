@@ -1,3 +1,4 @@
+import { RubiksMotionSystem } from "@/components/common/rubiks-motion-system";
 import { HeroSection } from "@/sections/hero-section";
 import { AboutSection } from "@/sections/about-section";
 import { AchievementsSection } from "@/sections/achievements-section";
@@ -6,27 +7,32 @@ import { TechStackSection } from "@/sections/tech-stack-section";
 import { LeetCodeSection } from "@/sections/leetcode-section";
 import { GitHubSection } from "@/sections/github-section";
 import { ContactSection } from "@/sections/contact-section";
+
 export default function Home() {
   return (
-    <div className="relative bg-[#F7F7F7] min-h-screen text-[#1C1C1C]">
+    <div className="relative bg-[#F8F8F5] min-h-screen text-[#1A1A1A]">
+      {/* 3D Rubik's Cube Scroll-Breaking & Revolving Motion System */}
+      <RubiksMotionSystem />
+
       <main className="relative z-10">
-        {/* 01: Hero */}
+        {/* 01 */}
         <HeroSection />
-        {/* 02: Work Experience & Background */}
+        {/* 02 */}
         <AboutSection />
-        {/* 03: Case Studies (Featured Projects) */}
-        <ProjectsSection />
-        {/* 04: Problem Solving Metrics (LeetCode) */}
-        <LeetCodeSection />
-        {/* 05: Open Source (GitHub) */}
-        <GitHubSection />
-        {/* 06: Technical Stack */}
-        <TechStackSection />
-        {/* 07: Beyond The Screen */}
+        {/* 03 */}
         <AchievementsSection />
-        {/* 08: Contact & Footer */}
+        {/* 04 */}
+        <LeetCodeSection />
+        {/* 05 */}
+        <GitHubSection />
+        {/* 06 */}
+        <ProjectsSection />
+        {/* 07 */}
+        <TechStackSection />
+        {/* 08 */}
         <ContactSection />
       </main>
     </div>
   );
 }
+

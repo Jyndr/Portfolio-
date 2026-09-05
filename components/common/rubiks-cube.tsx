@@ -20,20 +20,21 @@ interface CubieData {
   faces: FaceColors;
 }
 
-// Exact colors matching Dev Ashish Dewangan's reference portfolio
+// Portfolio-native color palette (White, Off-White, Emerald Green & Soft Mint — ZERO PURPLE)
 const COLOR_WHITE = "#FFFFFF";
-const COLOR_LAVENDER = "#E4D1FF"; // rgb(228, 209, 255)
-const COLOR_LILAC = "#DDD6FE";
-const COLOR_PALE_TINT = "#F5F3FF";
+const COLOR_OFFWHITE = "#F8F8F5";
+const COLOR_CREAM = "#FAFAF8";
+const COLOR_GREEN = "#10B981"; // Emerald green
+const COLOR_MINT = "#D1FAE5";  // Soft mint
 
 function getInitialFaces(x: number, y: number, z: number): FaceColors {
   return {
     top: COLOR_WHITE,
-    bottom: COLOR_WHITE,
-    right: COLOR_LAVENDER,
-    left: COLOR_PALE_TINT,
-    front: (x + y + z) % 2 === 0 ? COLOR_LAVENDER : COLOR_WHITE,
-    back: COLOR_LILAC,
+    bottom: COLOR_OFFWHITE,
+    right: COLOR_GREEN,
+    left: COLOR_CREAM,
+    front: (x + y + z) % 2 === 0 ? COLOR_GREEN : COLOR_WHITE,
+    back: COLOR_MINT,
   };
 }
 
@@ -327,9 +328,9 @@ export function RubiksCube() {
 
   return (
     <div className="flex flex-col items-center select-none relative z-20">
-      {/* Floating Accent Sphere (exact match to Dev Ashish Dewangan's hero design) */}
+      {/* Floating Accent Sphere (Emerald Green, NO PURPLE) */}
       <div
-        className="absolute -top-6 -left-8 w-6 h-6 rounded-full bg-[#8B69FA] shadow-md shadow-[#8B69FA]/30 animate-pulse pointer-events-none hidden sm:block"
+        className="absolute -top-6 -left-8 w-6 h-6 rounded-full bg-[#10B981] shadow-md shadow-[#10B981]/30 animate-pulse pointer-events-none hidden sm:block"
         style={{ animationDuration: "3s" }}
       />
 
@@ -472,7 +473,7 @@ export function RubiksCube() {
       {/* Interactive Controls & Drag Hint */}
       <div className="mt-2 flex flex-col items-center gap-2">
         <p className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-          <Sparkles size={12} className="text-[#8B69FA]" />
+          <Sparkles size={12} className="text-[#10B981]" />
           <span>Drag to Orbit • Click to twist</span>
         </p>
 
@@ -511,7 +512,7 @@ export function RubiksCube() {
           <button
             onClick={() => setAutoTwist((v) => !v)}
             className={`px-3 py-1.5 rounded-full text-xs font-mono font-medium border shadow-sm transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer ${autoTwist
-                ? "bg-[#EDE9FE] text-[#6D28D9] border-[#DDD6FE]"
+                ? "bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]"
                 : "bg-white/90 text-neutral-600 border-neutral-300"
               }`}
             title="Toggle automatic idle twisting"
@@ -523,4 +524,3 @@ export function RubiksCube() {
     </div>
   );
 }
-

@@ -1,103 +1,137 @@
-"use client";
-
-import { Trophy, Flame, Globe, Sparkles, ArrowUpRight, Compass, Heart, Terminal } from "lucide-react";
+import { Trophy, Award, ExternalLink, Code2, Flame, Globe } from "lucide-react";
 import { config } from "@/lib/config";
+import { SectionShell } from "@/components/ui/section-shell";
 import { FadeIn } from "@/components/common/motion";
-import { Container } from "@/components/ui/primitives";
-import { playPop, playTick } from "@/lib/sound";
+import { ConfigImage } from "@/components/common/config-image";
 
 export function AchievementsSection() {
-  const cards = [
+  const problemSolvingStats = [
     {
-      title: "550+ Days Streak",
-      category: "DISCIPLINE",
-      desc: "Daily problem-solving habit maintained across LeetCode, Codeforces, and competitive platforms.",
-      icon: Flame,
-      color: "bg-[#FFF7ED] text-[#EA580C] border-[#FED7AA]",
+      label: "Total Problems Solved",
+      value: `${config.problemSolving.totalSolved}+`,
+      href: config.socials.codolio.url,
+      sub: `${config.problemSolving.codingDays}+ Active Days`,
     },
     {
-      title: "130+ Contests",
-      category: "COMPETITIVE ARENA",
-      desc: "Regular participant in global timed coding contests, reaching top global ranks on CodeChef (#398).",
-      icon: Globe,
-      color: "bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]",
+      label: "LeetCode Max Rating",
+      value: config.problemSolving.leetcode.maxRating,
+      href: config.socials.leetcode.url,
+      sub: "Top 15% Global Rank",
     },
     {
-      title: "AI & Distributed Systems",
-      category: "CURIOSITY",
-      desc: "Exploring modern LLM orchestration, vector databases, event-driven architectures, and high-concurrency systems.",
-      icon: Sparkles,
-      color: "bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]",
+      label: "CodeChef Max Rating",
+      value: config.problemSolving.codechef.maxRating,
+      href: config.socials.codechef.url,
+      sub: `Best Rank: #${config.problemSolving.codechef.bestGlobalRank}`,
+    },
+    {
+      label: "Codeforces Rank",
+      value: config.problemSolving.codeforces.rank,
+      href: config.socials.codeforces.url,
+      sub: `Rating: ${config.problemSolving.codeforces.maxRating}`,
     },
   ];
 
   return (
-    <section id="achievements" className="py-24 sm:py-32 relative scroll-mt-12 bg-[#F7F7F7]">
-      <Container className="px-6 sm:px-10 lg:px-14">
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/10 pb-8">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8B69FA] font-semibold block mb-2">
-              07 / BEYOND THE SCREEN
-            </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-[#1C1C1C] leading-[0.95]">
-              WHEN I&apos;M NOT{" "}
-              <span className="font-serif italic font-normal text-[#8B69FA] lowercase">
-                coding
-              </span>
-            </h2>
-          </div>
-
-          <span className="text-xs font-mono text-[#707070] hidden sm:block">
-            Philosophy &amp; Curiosity
+    <SectionShell
+      id="achievements"
+      index="03"
+      label="MILESTONES"
+      title="Achievements & Recognition"
+      description="Competitive excellence, hackathons, and problem-solving milestones."
+      quote="Progress is a series of small wins."
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* Left Column: Hackathons & Certifications */}
+        <div className="lg:col-span-7 flex flex-col gap-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#666666]">
+            Hackathons &amp; Honors
           </span>
+          {config.achievements.map((item) => (
+            <FadeIn key={`${item.title}-${item.year}`}>
+              <div className="flex flex-col sm:flex-row gap-6 p-6 rounded-2xl border border-[#E6E6E6] bg-[#FFFFFF] transition-transform hover:-translate-y-0.5">
+                {item.image ? (
+                  <div className="relative w-full sm:w-40 aspect-[4/3] shrink-0 overflow-hidden rounded-xl border border-[#E6E6E6]">
+                    <ConfigImage
+                      src={item.image}
+                      alt={item.title}
+                      width={240}
+                      height={180}
+                      placeholderLabel={item.title}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex flex-col justify-between flex-1">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h4 className="text-base font-bold text-[#1A1A1A]">{item.title}</h4>
+                      <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-[#F7F7F5] text-[#1A1A1A]">
+                        {item.year}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-[#666666]">{item.organization}</p>
+                    <p className="mt-2 text-xs sm:text-sm text-[#666666] leading-relaxed">{item.description}</p>
+                  </div>
+
+                  {item.certificate ? (
+                    <a
+                      href={item.certificate}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A1A1A] hover:underline"
+                    >
+                      <span>View Certificate</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </FadeIn>
+          ))}
         </div>
 
-        {/* Narrative Block (Dev Ashish design) */}
-        <FadeIn className="mt-8 max-w-3xl">
-          <p className="text-lg sm:text-xl text-[#1C1C1C] leading-relaxed">
-            I’m drawn to distributed systems architecture puzzles, real-time algorithmic showdowns, exploring cutting-edge AI agent frameworks, and collaborating with fellow builders to build products that solve real problems.
-          </p>
-        </FadeIn>
-
-        {/* 3 Interactive Cards */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {cards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <FadeIn key={card.title}>
+        {/* Right Column: Competitive Programming Statistics */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#666666]">
+            Competitive Programming
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+            {problemSolvingStats.map((stat) => {
+              const isValidLink = stat.href && stat.href !== "TODO" && stat.href !== "#";
+              return (
                 <div
-                  onMouseEnter={() => playTick()}
-                  className="p-8 rounded-[30px] bg-white border border-black/10 shadow-xs hover:shadow-md transition-all hover:scale-[1.01] flex flex-col justify-between h-full group"
+                  key={stat.label}
+                  className="flex items-center justify-between p-4 rounded-xl border border-[#E6E6E6] bg-[#FFFFFF] hover:border-[#1A1A1A]/30 transition-all"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold border ${card.color}`}>
-                        {card.category}
-                      </span>
-                      <div className="w-8 h-8 rounded-full bg-[#F7F7F7] flex items-center justify-center text-[#1C1C1C] group-hover:bg-[#EDE9FE] group-hover:text-[#6D28D9] transition-colors">
-                        <Icon size={16} />
-                      </div>
-                    </div>
-
-                    <h3 className="text-xl sm:text-2xl font-black text-[#1C1C1C] tracking-tight group-hover:text-[#8B69FA] transition-colors">
-                      {card.title}
-                    </h3>
-                    <p className="mt-3 text-xs sm:text-sm text-[#707070] leading-relaxed">
-                      {card.desc}
-                    </p>
+                    <span className="text-2xl font-serif font-bold text-[#1A1A1A] block">
+                      {stat.value}
+                    </span>
+                    <span className="text-xs font-semibold text-[#1A1A1A] block mt-0.5">
+                      {stat.label}
+                    </span>
+                    <span className="text-xs text-[#666666] block mt-0.5">{stat.sub}</span>
                   </div>
-
-                  <div className="mt-8 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-mono text-[#707070]">
-                    <span>Continuous Growth</span>
-                    <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-                  </div>
+                  {isValidLink ? (
+                    <a
+                      href={stat.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F7F7F5] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#FFFFFF] transition-colors"
+                      aria-label={`View ${stat.label}`}
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                  ) : null}
                 </div>
-              </FadeIn>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </SectionShell>
   );
 }
+
+
